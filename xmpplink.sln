@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Express 2013 for Windows Desktop
+VisualStudioVersion = 12.0.21005.1
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "xmpplink", "xmpplink\xmpplink.vcxproj", "{E55421D8-FEC8-4BFA-88CD-119E2BB73A52}"
+	ProjectSection(ProjectDependencies) = postProject
+		{36E32BC3-0645-4C90-8BF5-6495ACB7CF5F} = {36E32BC3-0645-4C90-8BF5-6495ACB7CF5F}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "gloox-1.0", "include\gloox\gloox.vcxproj", "{36E32BC3-0645-4C90-8BF5-6495ACB7CF5F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E55421D8-FEC8-4BFA-88CD-119E2BB73A52}.Debug|Win32.ActiveCfg = Debug|Win32
+		{E55421D8-FEC8-4BFA-88CD-119E2BB73A52}.Debug|Win32.Build.0 = Debug|Win32
+		{E55421D8-FEC8-4BFA-88CD-119E2BB73A52}.Release|Win32.ActiveCfg = Release|Win32
+		{E55421D8-FEC8-4BFA-88CD-119E2BB73A52}.Release|Win32.Build.0 = Release|Win32
+		{36E32BC3-0645-4C90-8BF5-6495ACB7CF5F}.Debug|Win32.ActiveCfg = Debug|Win32
+		{36E32BC3-0645-4C90-8BF5-6495ACB7CF5F}.Debug|Win32.Build.0 = Debug|Win32
+		{36E32BC3-0645-4C90-8BF5-6495ACB7CF5F}.Release|Win32.ActiveCfg = Release|Win32
+		{36E32BC3-0645-4C90-8BF5-6495ACB7CF5F}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal

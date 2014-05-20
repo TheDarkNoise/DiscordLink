@@ -19,3 +19,13 @@
 *.exe
 *.out
 *.app
+
+*.exp
+*.ilk
+*.pdb
+*.sdf
+*.opensdf
+*.suo
+*.user
+
+Temp/
