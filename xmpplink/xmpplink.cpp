@@ -13,14 +13,15 @@
 #include "gloox/src/dataform.h"
 #include "gloox/src/gloox.h"
 #include "gloox/src/lastactivity.h"
-#include "gloox/src/loghandler.h"
-#include "gloox/src/logsink.h"
 
 #include <stdio.h>
 #include <locale.h>
 #include <string>
 #include <cstdio>
 #include <windows.h>
+#include <map>
+#include <fstream>
+#include <algorithm>
 
 #define XMPPLINK_PORT 31415
 
@@ -28,6 +29,17 @@
 #define XMPPLINK_STATE_READY 2
 
 #define XMPPLINK_COMMAND_CHANSEND 100
+
+// TODO: This is horrible and I should feel bad about it.
+// Use minIni to load these basic settings instead.
+#define XMPPLINK_NICKNAME "ChatBot"
+#define XMPPLINK_FULL_JID "chatbot@xmpp.server.com/Chat";
+#define XMPPLINK_XMPPROOM "chatroom@conference.xmpp.server.com/ChatBot"
+#define XMPPLINK_PASSWORD "botpassword"
+#define XMPPLINK_RESOURCE "ChatBot"
+#define XMPPLINK_CHATROOM "Chat Room Name"
+#define XMPPLINK_SERVERIP "127.0.0.1"
+#define XMPPLINK_USERFILE "xmpplink.users.txt"
 
 class XmppLink
 {
@@ -46,7 +58,7 @@ public:
 
 		memset(&addr, 0, sizeof(struct sockaddr_in));
 		addr.sin_family = AF_INET;
-		addr.sin_addr.s_addr = inet_addr("127.0.0.1");
+		addr.sin_addr.s_addr = inet_addr(XMPPLINK_SERVERIP);
 		addr.sin_port = htons(XMPPLINK_PORT);
 
 		if (connect(sockfd, (struct sockaddr *)&addr, sizeof(addr)) < 0)
@@ -57,6 +69,73 @@ public:
 
 		state = XMPPLINK_STATE_READY;
 		return true;
+	}
+
+	std::string Ping(std::string nick)
+	{
+		std::string jid;
+		jid = nick_jid[nick];
+		user_id = jid_auth[jid];
+		jid = "[XMPP Link] Received request from " + nick + " <" + jid + ">: Messages will ";
+
+		if (!user_id)
+			jid.append("NOT ");
+
+		jid.append("show up in ");
+		jid.append(XMPPLINK_CHATROOM);
+
+		if (!user_id)
+			jid.append(" (User ID missing)");
+
+		return jid;
+	}
+
+	void Send(std::string nick, std::string channel, std::string msg)
+	{
+		int s;
+		std::string jid;
+		if (state != XMPPLINK_STATE_READY)
+			return;
+
+		jid = nick_jid[nick];
+		user_id = jid_auth[jid];
+
+		if (!user_id)
+		{
+			printf("%s not in the users file!\n", nick.c_str());
+			return;
+		}
+
+		buffer[2] = XMPPLINK_COMMAND_CHANSEND;
+
+		// Using .size as a position pointer for the buffer.
+		// We'll be done with it before any call to recv can touch the buffer.
+		size = 3;
+		memcpy(&buffer[size], &user_id, 4);
+		size += 4;
+
+		s = channel.length();
+		if (s > 255) s = 255;	// Truncate if larger, though should never happen.
+
+		memcpy(&buffer[size], &s, 1);
+		size += 1;
+		memcpy(&buffer[size], channel.c_str(), s);
+		size += s;
+
+		s = msg.length();
+		if (s > 255) s = 255;	// Truncate if larger, TODO: split in multiple messages.
+
+		memcpy(&buffer[size], &s, 1);
+		size += 1;
+		memcpy(&buffer[size], msg.c_str(), s);
+		size += s;
+
+		// Don't send the user name, server will ignore it anyway.
+
+		// Packet size in the first 2 bytes.
+		memcpy(&buffer[0], &size, 2);
+
+		send(sockfd, buffer, size, 0);
 	}
 
 	bool Recv()
@@ -91,16 +170,33 @@ public:
 				if (buffer[2] == XMPPLINK_COMMAND_CHANSEND)
 				{
 					int len = 0;
+					int idx = 3;
 
 					// Next in buffer is the User ID of the sender of the message.
-					memcpy(&user_id, &buffer[3], 4);
+					memcpy(&user_id, &buffer[idx], 4);
+					idx += 4;
 
 					// And next, the length of the chat channel.
-					len = buffer[7];
-					dest.assign(&buffer[8], len);
+					memcpy(&len, &buffer[idx], 1);
+					idx += 1;
+					dest.assign(&buffer[idx], len);
+					idx += len;
 
-					len = buffer[8 + len];
-					message.assign(&buffer[8 + 13], len);
+					// For now we're only relaying messages from/to a single chat room.
+					if (dest.compare(XMPPLINK_CHATROOM))
+						return false;
+
+					// Message contents.
+					memcpy(&len, &buffer[idx], 1);
+					idx += 1;
+					message.assign(&buffer[idx], len);
+					idx += len;
+
+					// User nick name.
+					memcpy(&len, &buffer[idx], 1);
+					idx += 1;
+					user_name.assign(&buffer[idx], len);
+					idx += len;
 				}
 
 				return true;
@@ -113,6 +209,8 @@ public:
 			state = XMPPLINK_STATE_NONE;
 			return false;
 		}
+
+		return false;
 	}
 
 	bool Tick()
@@ -128,9 +226,36 @@ public:
 		}
 	}
 
+	// TODO: load this from SQL instead of a file.
+	// SQL example probably not useful for Github version though, use a #define to keep both versions.
+	void LoadMap()
+	{
+		std::ifstream userlist;
+		std::string name;
+		int id = 0;
+		printf("Loading list of users...\n");
+		userlist.open(XMPPLINK_USERFILE);
+		while (userlist >> id >> name)
+		{
+			std::transform(name.begin(), name.end(), name.begin(), tolower);
+			jid_auth.insert(std::pair<std::string, int>(name, id));
+		}
+
+
+		userlist.close();
+		printf("Done.\n");
+	}
+
+	void NickMap(std::string nick, std::string jid)
+	{
+		std::transform(jid.begin(), jid.end(), jid.begin(), tolower);
+		nick_jid.insert(std::pair<std::string, std::string>(nick, jid));
+	}
+
 	int user_id;
 	std::string dest;
 	std::string message;
+	std::string user_name;
 
 private:
 	SOCKET sockfd;
@@ -140,6 +265,8 @@ private:
 	int size;
 	int reconnectTime;
 	struct timeval timeout;
+	std::map<std::string, int> jid_auth;
+	std::map<std::string, std::string> nick_jid;
 };
 
 class ParagonBot : public gloox::ConnectionListener, gloox::MUCRoomHandler
@@ -151,19 +278,22 @@ public:
 
 	void start()
 	{
-		gloox::JID jid("bot@xmpp.example.com/Github");
-		j = new gloox::Client(jid, "password");
+		std::string fulljid = XMPPLINK_FULL_JID;
+		gloox::JID jid(fulljid);
+		j = new gloox::Client(jid, XMPPLINK_PASSWORD);
 		j->registerConnectionListener(this);
 		j->setPresence(gloox::Presence::Available, -1);
-		j->disco()->setVersion("ParagonBot", "0.01", "Windows");
-		j->disco()->setIdentity("client", "bot", "Chat Bot");
+		j->disco()->setVersion("XMPP Link", "0.10", "Windows");
+		j->disco()->setIdentity("client", "bot", "XMPP Link");
 		j->setCompression(false);
 		gloox::StringList ca;
 		ca.push_back("/path/to/cacert.crt");
 		j->setCACerts(ca);
 
-		gloox::JID nick("chat@chat.xmpp.rpcongress.com/Bot");
+		gloox::JID nick(XMPPLINK_XMPPROOM);
 		m_room = new gloox::MUCRoom(j, nick, this, 0);
+
+		xmppLink.LoadMap();
 
 		if (j->connect(false))
 		{
@@ -172,11 +302,10 @@ public:
 			{
 				// Main loop! About time!
 				ce = j->recv(10000);	// 100ms timeout
-
 				if (xmppLink.Tick())
 				{
 					// Got a message from the XMPP Link, relay it.
-					m_room->send(std::to_string(xmppLink.user_id) + ": " + xmppLink.message);
+					m_room->send(xmppLink.user_name + ": " + xmppLink.message);
 				}
 			}
 		}
@@ -195,7 +324,7 @@ public:
 	virtual void onDisconnect(gloox::ConnectionError e)
 	{
 		// Bot was disconnected, probably auth failure. Should try to reconnect.
-		printf("Disconnedted from XMPP, retrying...\n");
+		printf("Disconnected from XMPP, retrying...\n");
 	}
 
 	virtual bool onTLSConnect(const gloox::CertInfo& info)
@@ -205,14 +334,21 @@ public:
 
 	virtual void handleMUCParticipantPresence(gloox::MUCRoom *, const gloox::MUCRoomParticipant participant, const gloox::Presence& presence)
 	{
+		xmppLink.NickMap(participant.nick->resource(), participant.jid->username());
 	}
 
+	// Received something from someone in the room.
 	virtual void handleMUCMessage(gloox::MUCRoom*, const gloox::Message& msg, bool priv)
 	{
-		// Received something from someone in the room.
-		// This is where the stuff to send data back to the chat server should go.
-		// The message will only show the nickname as the sender, something needs
-		// to be done to translate that to a chat server ID.
+		// If when() is true, the message is being replayed from history; ignore it.
+		// Also ignore messages from the bot itself.
+		if (!msg.when() && msg.from().resource().compare(XMPPLINK_NICKNAME))
+		{
+			if (msg.body().compare("!ping"))
+				xmppLink.Send(msg.from().resource(), XMPPLINK_CHATROOM, msg.body());
+			else
+				m_room->send(xmppLink.Ping(msg.from().resource()));
+		}
 	}
 
 	virtual void handleMUCSubject(gloox::MUCRoom *, const std::string& nick, const std::string& subject)
@@ -231,7 +367,7 @@ public:
 	{
 	}
 
-	virtual void handleMUCInviteDecline(gloox::MUCRoom * /*room*/, const gloox::JID& invitee, const std::string& reason)
+	virtual void handleMUCInviteDecline(gloox::MUCRoom *, const gloox::JID& invitee, const std::string& reason)
 	{
 	}
 
@@ -251,12 +387,7 @@ int main()
 {
 	ParagonBot *r = new ParagonBot();
 
-	while (1)
-	{
-		// This should only end if disconnected, so reconnect right away.
-		// The XmppLink probably won't be happy about this.
-		r->start();
-	}
+	r->start();
 
 	delete(r);
 	return 0;
