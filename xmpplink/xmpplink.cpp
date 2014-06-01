@@ -94,6 +94,7 @@ public:
 	{
 		int s;
 		std::string jid;
+
 		if (state != XMPPLINK_STATE_READY)
 			return;
 
@@ -115,7 +116,7 @@ public:
 		size += 4;
 
 		s = channel.length();
-		if (s > 255) s = 255;	// Truncate if larger, though should never happen.
+		if (s > 255) s = 255;	// Truncate if larger, should never happen.
 
 		memcpy(&buffer[size], &s, 1);
 		size += 1;
@@ -123,7 +124,7 @@ public:
 		size += s;
 
 		s = msg.length();
-		if (s > 255) s = 255;	// Truncate if larger, TODO: split in multiple messages.
+		if (s > 255) s = 255;	// Will never happen because of word wrap.
 
 		memcpy(&buffer[size], &s, 1);
 		size += 1;
@@ -345,7 +346,34 @@ public:
 		if (!msg.when() && msg.from().resource().compare(XMPPLINK_NICKNAME))
 		{
 			if (msg.body().compare("!ping"))
-				xmppLink.Send(msg.from().resource(), XMPPLINK_CHATROOM, msg.body());
+			{
+				std::string message = msg.body();
+				int split;
+
+				split = message.find_first_not_of(' ');
+				if (split < 0)	// String is all spaces, don't send it.
+					return;
+
+				message = message.substr(split, message.find_last_not_of(' ') - split + 1);
+
+				// Split into multiple messages if necessary.
+				while (message.length() > 255)
+				{
+					// Limit is 256 because if the last character is a space we're removing it anyway.
+					split = message.substr(0, 256).rfind(' ');
+					if (split < 0)
+					{
+						xmppLink.Send(msg.from().resource(), XMPPLINK_CHATROOM, message.substr(0, 255));
+						message = message.substr(256);
+					}
+					else
+					{
+						xmppLink.Send(msg.from().resource(), XMPPLINK_CHATROOM, message.substr(0, split));
+						message = message.substr(split + 1);
+					}
+				}
+				xmppLink.Send(msg.from().resource(), XMPPLINK_CHATROOM, message);
+			}
 			else
 				m_room->send(xmppLink.Ping(msg.from().resource()));
 		}
