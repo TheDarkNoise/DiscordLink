@@ -29,6 +29,7 @@
 #define XMPPLINK_STATE_READY 2
 
 #define XMPPLINK_COMMAND_CHANSEND 100
+#define XMPPLINK_COMMAND_CHANMOTD 101
 
 // TODO: This is horrible and I should feel bad about it.
 // Use minIni to load these basic settings instead.
@@ -40,7 +41,6 @@
 #define XMPPLINK_CHATROOM "Chat Room Name"
 #define XMPPLINK_SERVERIP "127.0.0.1"
 #define XMPPLINK_USERFILE "xmpplink.users.txt"
-
 class XmppLink
 {
 public:
@@ -139,7 +139,7 @@ public:
 		send(sockfd, buffer, size, 0);
 	}
 
-	bool Recv()
+	int Recv()
 	{
 		int s;
 		FD_ZERO(&fd);
@@ -198,9 +198,33 @@ public:
 					idx += 1;
 					user_name.assign(&buffer[idx], len);
 					idx += len;
-				}
 
-				return true;
+					return XMPPLINK_COMMAND_CHANSEND;
+				}
+				else if (buffer[2] == XMPPLINK_COMMAND_CHANMOTD)
+				{
+					int len = 0;
+					int idx = 3;
+
+					// Chat channel
+					memcpy(&len, &buffer[idx], 1);
+					idx += 1;
+					dest.assign(&buffer[idx], len);
+					idx += len;
+
+					// For now we're only relaying messages from/to a single chat room.
+					if (dest.compare(XMPPLINK_CHATROOM))
+						return false;
+
+					// Message contents.
+					memcpy(&len, &buffer[idx], 1);
+					idx += 1;
+					message.assign(&buffer[idx], len);
+					idx += len;
+
+					return XMPPLINK_COMMAND_CHANMOTD;
+				}
+				return false;
 			}
 		}
 		else if (s == -1)
@@ -214,7 +238,7 @@ public:
 		return false;
 	}
 
-	bool Tick()
+	int Tick()
 	{
 		if (state == XMPPLINK_STATE_NONE)
 		{
@@ -303,10 +327,14 @@ public:
 			{
 				// Main loop! About time!
 				ce = j->recv(10000);	// 100ms timeout
-				if (xmppLink.Tick())
+				switch (xmppLink.Tick())
 				{
-					// Got a message from the XMPP Link, relay it.
+				case XMPPLINK_COMMAND_CHANSEND:
 					m_room->send(xmppLink.user_name + ": " + xmppLink.message);
+					break;
+				case XMPPLINK_COMMAND_CHANMOTD:
+					m_room->setSubject(xmppLink.message);
+					break;
 				}
 			}
 		}
