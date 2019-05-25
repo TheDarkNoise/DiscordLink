@@ -1,5 +1,0 @@
-1 user
-3 otheruser
-4 superuser
-5 hyperuser
-6 ultrauser
