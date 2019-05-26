@@ -127,7 +127,7 @@ public class ChatServerLink
 			*/
 			int messageSize = 2 + 1 + 4 // Message head (packet size, message type, user ID)
 				+ chatroom.length() + 1 // Pascal string for chatroom
-				+ message.length() + 1 // Pascal string for message
+				+ message.getBytes(StandardCharsets.UTF_8).length + 1 // Pascal string for message
 				+ usernickname.length() + 1; // Pascal string for nickname
 			ByteBuffer buffer = ByteBuffer.allocate(messageSize);
 			buffer.order(ByteOrder.LITTLE_ENDIAN);
@@ -140,8 +140,8 @@ public class ChatServerLink
 			// 
 			buffer.put((byte) chatroom.length());
 			buffer.put(Arrays.copyOf(chatroom.getBytes(), chatroom.length()));
-			buffer.put((byte) message.length());
-			buffer.put(Arrays.copyOf(message.getBytes(StandardCharsets.UTF_8), message.length()));
+			buffer.put((byte) message.getBytes(StandardCharsets.UTF_8).length);
+			buffer.put(Arrays.copyOf(message.getBytes(StandardCharsets.UTF_8), message.getBytes(StandardCharsets.UTF_8).length));
 			buffer.put((byte) usernickname.length());
 			buffer.put(Arrays.copyOf(usernickname.getBytes(), usernickname.length()));
 			return buffer.array();
