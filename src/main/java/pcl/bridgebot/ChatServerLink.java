@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -140,7 +141,7 @@ public class ChatServerLink
 			buffer.put((byte) chatroom.length());
 			buffer.put(Arrays.copyOf(chatroom.getBytes(), chatroom.length()));
 			buffer.put((byte) message.length());
-			buffer.put(Arrays.copyOf(message.getBytes(), message.length()));
+			buffer.put(Arrays.copyOf(message.getBytes(StandardCharsets.UTF_8), message.length()));
 			buffer.put((byte) usernickname.length());
 			buffer.put(Arrays.copyOf(usernickname.getBytes(), usernickname.length()));
 			return buffer.array();
