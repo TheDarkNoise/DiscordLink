@@ -1,7 +1,7 @@
 /**
  * 
  */
-package pcl.HeroOne;
+package pcl.bridgebot;
 
 import net.dv8tion.jda.core.JDA;
 import net.dv8tion.jda.core.JDABuilder;
@@ -12,19 +12,28 @@ import net.dv8tion.jda.webhook.WebhookClient;
 import net.dv8tion.jda.webhook.WebhookClientBuilder;
 import net.dv8tion.jda.webhook.WebhookMessage;
 import net.dv8tion.jda.webhook.WebhookMessageBuilder;
-import pcl.HeroOne.ChatServerLink.PackedMessageData;
 import pcl.HeroOne.util.Database;
 import pcl.HeroOne.util.httpd;
+import pcl.bridgebot.ChatServerLink.PackedMessageData;
 
 import javax.security.auth.login.LoginException;
 
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
-import java.sql.Connection;
+import java.io.IOException;
+import java.io.OutputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+
+import com.google.common.base.Splitter;
+import com.sun.net.httpserver.HttpExchange;
+import com.sun.net.httpserver.HttpHandler;
 
 public class HeroOne extends ListenerAdapter
 {
@@ -32,6 +41,7 @@ public class HeroOne extends ListenerAdapter
 	public static Integer httpdPort = null;
 	static JDA jda; 
 	public static httpd httpServer = new httpd();
+	public static String httpdSecret = null;
 	
 	private static boolean initDatabase() throws SQLException {
 		Database.init();
@@ -49,6 +59,7 @@ public class HeroOne extends ListenerAdapter
 		//UserMap
 		Database.addPreparedStatement("getUserByGlobal","SELECT discordID FROM UserMap WHERE globalID = ?;");
 		Database.addPreparedStatement("getUserByDiscordID","SELECT globalID FROM UserMap WHERE discordID = ?;");
+		Database.addPreparedStatement("addUser", "REPLACE INTO UserMap (globalID, discordID) VALUES (?,?);");
 		
 		//JSONStorage
 		Database.addPreparedStatement("storeJSON", "INSERT OR REPLACE INTO JsonData (mykey, store) VALUES (?, ?);");
@@ -63,7 +74,7 @@ public class HeroOne extends ListenerAdapter
 	 * This is the method where the program starts.
 	 * @throws Exception 
 	 */
-	public static void main(String[] args) throws Exception
+	public static void main(String[] args)
 	{
 		try {
 			Class.forName("org.sqlite.JDBC");
@@ -80,9 +91,13 @@ public class HeroOne extends ListenerAdapter
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		PreparedStatement getSettings = Database.getPreparedStatement("getSettings");
+		PreparedStatement getSettings = null;
+
 		String chatserver = null;
 		Integer chatserverport = null;
+		try {
+			getSettings = Database.getPreparedStatement("getSettings");
+
 		getSettings.setString(1, "chatserver");
 		ResultSet res1 = getSettings.executeQuery();
 		if (res1.next()) {
@@ -101,8 +116,24 @@ public class HeroOne extends ListenerAdapter
 			httpdPort = res3.getInt(1);
 		}
 		
+		getSettings.setString(1, "httpdsecret");
+		ResultSet res4 = getSettings.executeQuery();
+		if (res4.next()) {
+			httpdSecret = res4.getString(1);
+		}
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}		
 		 link = new ChatServerLink(chatserver, chatserverport);
-		
+		 try {
+			httpd.setup();
+			 httpd.start();
+		} catch (Exception e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		 httpd.registerContext("/discord", new DiscordHandler(), "Discord");
 		//We construct a builder for a BOT account. If we wanted to use a CLIENT account
 		// we would use AccountType.CLIENT
 		try
@@ -195,7 +226,7 @@ public class HeroOne extends ListenerAdapter
 				name = member.getEffectiveName();       //This will either use the Member's nickname if they have one,
 			}                                           // otherwise it will default to their username. (User#getName())
 
-			System.out.printf("(%s)[%s]<%s>: %s\n", guild.getName(), textChannel.getName(), name, msg);
+			//System.out.printf("(%s)[%s]<%s>: %s\n", guild.getName(), textChannel.getName(), name, msg);
 			if (author.equals(jda.getSelfUser()))
 				return;
 			PreparedStatement getChannelByDiscordID;
@@ -223,6 +254,64 @@ public class HeroOne extends ListenerAdapter
 		}
 	}
 
+	static class DiscordHandler implements HttpHandler {
+		@Override
+		public void handle(HttpExchange t) throws IOException {
+			PreparedStatement addChannel = null;
+			PreparedStatement delChannel = null;
+			PreparedStatement addUser = null;
+			try {
+				addChannel = Database.getPreparedStatement("addChannel");
+				delChannel = Database.getPreparedStatement("removeChannel");
+				addUser = Database.getPreparedStatement("addUser");
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			String response = "DISCORD!";
+			List<NameValuePair> paramsList = URLEncodedUtils.parse(t.getRequestURI(),"utf-8");
+	        String query = t.getRequestURI().toString().split("\\?")[1];
+	        final Map<String, String> map = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(query);
+
+			t.sendResponseHeaders(200, response.getBytes().length);
+			
+			if (paramsList.size() > 1) {
+				if (map.get("secret").contentEquals(httpdSecret)) {
+					if (map.get("action").equals("addChan")) {
+						try {
+							addChannel.setString(1, map.get("gname"));
+							addChannel.setString(2, map.get("discordid"));
+							addChannel.execute();
+						} catch (SQLException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					} else if (map.get("action").equals("delChan")) {
+						try {
+							delChannel.setString(1, map.get("gname"));
+							delChannel.execute();
+						} catch (SQLException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					} else if (map.get("action").equals("addUser")) {
+						try {
+							addUser.setString(1, map.get("gname"));
+							addUser.setString(2, map.get("discordid"));
+							addUser.execute();
+						} catch (SQLException e) {
+							// TODO Auto-generated catch block
+							e.printStackTrace();
+						}
+					}
+				}	
+			}
+			OutputStream os = t.getResponseBody();
+			os.write(response.getBytes());
+			os.close();
+		}
+	}
+	
 	//Game to Discord.
 	private static void senderClient() {
 
@@ -239,10 +328,7 @@ public class HeroOne extends ListenerAdapter
 							getChannelByGlobal.setString(1, t.chatroom);
 							ResultSet results = getChannelByGlobal.executeQuery();
 							if (results.next()) {
-								System.out.println(results.getInt(2));
-								System.out.println("[" + t.userNickname + "] " + t.message);
 								TextChannel channel = HeroOne.jda.getTextChannelById(results.getString(2));
-								//channel.sendMessage(t.userNickname + ": " + t.message).queue();
 								try
 								{
 									List<Webhook> webhook = channel.getWebhooks().complete(); // some webhook instance
@@ -251,16 +337,28 @@ public class HeroOne extends ListenerAdapter
 									}
 									for (Webhook hook : webhook) {
 										if (hook.getName().equalsIgnoreCase("GlobalChat")) {
+											String id = "574368341335080971";
+											PreparedStatement getUserByGlobal = null;
+											try {
+												getUserByGlobal = Database.getPreparedStatement("getUserByGlobal");
+											} catch (Exception e2) {
+												// TODO Auto-generated catch block
+												e2.printStackTrace();
+											}
+											getUserByGlobal.setString(1, Integer.toString(t.userId));
+											ResultSet results2 = getUserByGlobal.executeQuery();
+											if (results2.next()) {
+												id = results2.getString(1);
+											}
 											String nick = t.userNickname;
 											WebhookClientBuilder builder = hook.newClient(); //Get the first webhook.. I can't think of a better way to do this ATM.
 											WebhookClient client = builder.build();
 											WebhookMessageBuilder builder1 = new WebhookMessageBuilder();
 											builder1.setContent(t.message.replaceFirst(Pattern.quote("<"+t.userNickname+">"), ""));
-											//MessageEmbed firstEmbed = new EmbedBuilder().setColor(Color.RED).setDescription("This is one embed").build();
-											//MessageEmbed secondEmbed = new EmbedBuilder().setColor(Color.GREEN).setDescription("This is another embed").build();
 											builder1.setUsername(nick);
 											String avatar = "";
-											avatar = hook.getDefaultUser().getAvatarUrl();
+											User user = HeroOne.jda.getUserById(id);
+											avatar = user.getAvatarUrl();
 											builder1.setAvatarUrl(avatar);
 											WebhookMessage message1 = builder1.build();
 											client.send(message1);
@@ -270,11 +368,11 @@ public class HeroOne extends ListenerAdapter
 									}
 									channel.sendMessage(t.userNickname + ": " + t.message).queue();
 								} catch (Exception e1) {
+									System.out.println(e1);
 									channel.sendMessage(t.userNickname + ": " + t.message).queue();
 								}
 							}	
 						} catch (Exception e) {
-							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
 					}

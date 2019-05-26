@@ -1,24 +1,16 @@
 package pcl.HeroOne.util;
 
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import com.google.common.base.Charsets;
-import com.google.common.io.CharStreams;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-import pcl.HeroOne.HeroOne;
+import pcl.bridgebot.HeroOne;
 
 @SuppressWarnings("restriction")
 public class httpd {
@@ -65,27 +57,7 @@ public class httpd {
 		static String html;
 		@Override
 		public void handle(HttpExchange t) throws IOException {
-			InputStream htmlIn = getClass().getResourceAsStream("/html/index.html");
-			html = CharStreams.toString(new InputStreamReader(htmlIn, Charsets.UTF_8));
-
-			String target = t.getRequestURI().toString();
-			String response = "";
-
-			String navData = "";
-		    Iterator it = pages.entrySet().iterator();
-		    while (it.hasNext()) {
-		        Map.Entry pair = (Map.Entry)it.next();
-		        navData += "<div class=\"innertube\"><h1><a href=\""+ pair.getValue() +"\">"+ pair.getKey() +"</a></h1></div>";
-		    }
-		    
-			// convert String into InputStream
-			InputStream is = new ByteArrayInputStream(html.getBytes());
-			try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
-				String line = null;
-				while ((line = br.readLine()) != null) {
-					//response = response + line.replace("#BODY#", target).replace("#BOTNICK#", IRCBot.getOurNick()).replace("#NAVIGATION#", navData)+"\n";
-				}
-			}
+			String response = "Hello!";
 			t.sendResponseHeaders(200, response.getBytes().length);
 			OutputStream os = t.getResponseBody();
 			os.write(response.getBytes());

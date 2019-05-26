@@ -1,4 +1,4 @@
-package pcl.HeroOne;
+package pcl.bridgebot;
 
 import java.io.DataOutputStream;
 import java.io.IOException;
