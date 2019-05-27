@@ -3,6 +3,7 @@ package pcl.bridgebot;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.Socket;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -185,7 +186,12 @@ public class ChatServerLink
 				byte messageLength = buffer.get();
 				byte[] messageRaw = new byte[messageLength];
 				buffer.get(messageRaw);
-				result.message = new String(messageRaw);
+				try {
+					result.message = new String(messageRaw, "UTF-8");
+				} catch (UnsupportedEncodingException e) {
+					result.message = new String(messageRaw);
+					e.printStackTrace();
+				}
 		
 				// Pascal string for nickname
 				byte nicknameLength = buffer.get();
