@@ -2,7 +2,7 @@
 Java based CoH Global to Discord relay using JDA
 =========
 
-This bot relays messages from a simple and propietary format to an XMPP server.
+This bot relays messages from a simple and propietary format to an Discord Guild.
 The protocol is of little interest for the general population, but the bot is
 being open sourced for educational purposes.
 
@@ -28,6 +28,4 @@ receives a mesage; it retrieves the nickname from its insternal user table.
 User List
 =========
 
-The file xmpplink.user.txt contains the map from the internal User ID (int)
-to the user portion of the XMPP JID. Note that if the XMPP server does not
-send the full JID for users as they change nicknames, this will not work.
+The mapping between Discord ID and Global ID is handled in the sqlite DB
