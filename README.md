@@ -2,7 +2,7 @@
 Java based CoH Global to Discord relay using JDA
 =========
 
-This bot relays messages from a simple and propietary format to an Discord Guild.
+This bot relays messages from a simple and propietary format to a Discord Guild.
 The protocol is of little interest for the general population, but the bot is
 being open sourced for educational purposes.
 
@@ -23,7 +23,7 @@ the message stream begins immediately; there's no handshake or authentication.
     char*    Nickname
 
 The user nickname is always sent by the server, but ignored when the server
-receives a mesage; it retrieves the nickname from its insternal user table.
+receives a mesage; it retrieves the nickname from its internal user table.
 
 User List
 =========
