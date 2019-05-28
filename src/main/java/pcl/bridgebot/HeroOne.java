@@ -23,6 +23,7 @@ import org.apache.http.client.utils.URLEncodedUtils;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Scanner;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
 import java.io.IOException;
@@ -67,6 +68,8 @@ public class HeroOne extends ListenerAdapter
 
 		//Default config stuff
 		Database.addPreparedStatement("getSettings","SELECT data FROM Config WHERE key = ? LIMIT 1;");
+
+		Database.addPreparedStatement("setSettings","REPLACE INTO Config (key, data) VALUES (?,?);");
 		return true;
 	}
 
@@ -92,16 +95,63 @@ public class HeroOne extends ListenerAdapter
 			e1.printStackTrace();
 		}
 		PreparedStatement getSettings = null;
+		PreparedStatement setSettings = null;
 
 		String chatserver = null;
 		Integer chatserverport = null;
 		try {
 			getSettings = Database.getPreparedStatement("getSettings");
-
+			setSettings = Database.getPreparedStatement("setSettings");
+			
 		getSettings.setString(1, "chatserver");
 		ResultSet res1 = getSettings.executeQuery();
 		if (res1.next()) {
 			chatserver = res1.getString(1);
+		} else {
+			//We've got a fresh database, we need to ask some questions.
+			System.out.println("Enter your Discord Bot token: ");
+			Scanner scanner = new Scanner(System.in);
+			String discordToken = scanner.nextLine();
+			
+			System.out.println("Enter the default *ID* for global messages to show in game.");
+			System.out.println("(This will be the 'user_id' column in the 'cohchat' DB: ");
+			String defaultGID = scanner.nextLine();
+			
+			System.out.println("IPAddress for your chatserver (127.0.0.1?): ");
+			String chatserverIP = scanner.nextLine();
+			
+			System.out.println("HTTPd port for external script interfacing: ");
+			String httpdPort = scanner.nextLine();
+			
+			System.out.println("HTTPd secret, basically the password sent with all get requests: ");
+			String httpdSecret = scanner.nextLine();
+			
+			try {
+				setSettings.setString(1, "discordToken");
+				setSettings.setString(2, discordToken);
+				setSettings.execute();
+				
+				setSettings.setString(1, "defaultGID");
+				setSettings.setString(2, defaultGID);
+				setSettings.execute();
+				
+				setSettings.setString(1, "chatserver");
+				setSettings.setString(2, chatserverIP);
+				setSettings.execute();
+				
+				setSettings.setString(1, "httpdport");
+				setSettings.setString(2, httpdPort);
+				setSettings.execute();
+				
+				setSettings.setString(1, "httpdsecret");
+				setSettings.setString(2, httpdSecret);
+				setSettings.execute();
+			} catch (SQLException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+			System.out.println("If you need to modify these settings you can open 'discordlinkll.sqlite3' in an SQLite editor.");
+			scanner.close();
 		}
 		
 		getSettings.setString(1, "chatserverport");
