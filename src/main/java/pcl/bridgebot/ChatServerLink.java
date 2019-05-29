@@ -47,6 +47,9 @@ public class ChatServerLink
 			DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
 			while(shouldRun) {
 				if(clientSocket == null) {
+					clientSocket = new Socket(hostName, portNumber);
+					System.out.println("Connection to chatserver dropped, reconnecting...");
+					continue;
 				}
 				// Send all the pending messages
 				while(true) {
@@ -66,13 +69,13 @@ public class ChatServerLink
 					if(inFromServer.available() <= 0)
 					{
 						// If not, wait a bit of time.
-						TimeUnit.MILLISECONDS.sleep(500);
+						TimeUnit.MILLISECONDS.sleep(250);
 						continue;
 					}
 					// Read from the "in" socket until we get a message
 					// This will be interrupted if there's a socket close event
 					int dataRead = inFromServer.read(buffer);
-					if(dataRead > 0) {
+					if(dataRead > 0) { 
 						// Read & accept the message
 						PackedMessageData result = PackedMessageData.getDataFromPackedMessage(buffer, dataRead);
 						onMessageReceived.accept(result);
@@ -80,13 +83,14 @@ public class ChatServerLink
 				}
 				catch(IOException e) {
 					// NO OP (server was closed)
+					System.out.println("inFromServer: " + e);
 				}
 			}
+			System.out.println("Closing socket");
 			clientSocket.close();
-		}
-		catch(Exception e) {
+		} catch(Exception e) {
 			// TODO proper error handling for the socket stuff
-			System.out.println(e.getMessage());
+			System.out.println("Start Loop threw: " + e);
 		}
 	}
 
@@ -222,6 +226,8 @@ public class ChatServerLink
 				byte[] messageRaw = new byte[messageLength];
 				buffer.get(messageRaw);
 				result.message = new String(messageRaw);
+				
+				result.userNickname = new String("MOTD Update");
 		
 			}
 			return result;
