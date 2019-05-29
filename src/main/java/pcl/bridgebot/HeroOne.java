@@ -351,19 +351,27 @@ public class HeroOne extends ListenerAdapter {
 			private void handlePackedMessage(IPackedMessageData t) {
 				PreparedStatement getChannelByGlobal;
 				try {
+					//Get the Discord TextChannel ID
 					getChannelByGlobal = Database.getPreparedStatement("getChannelByGlobal");
 					getChannelByGlobal.setString(1, t.getChatroom());
 					ResultSet results = getChannelByGlobal.executeQuery();
 					if (results.next()) {
+						//Get the Discord TextChannel instance by the ID
 						TextChannel channel = HeroOne.jda.getTextChannelById(results.getString(2));
 						try {
+							//See if there are any webhooks if not send the message and return
 							List<Webhook> webhook = channel.getWebhooks().complete(); // some webhook instance
 							if (webhook.size() == 0) {
-								throw new RuntimeException();
+								channel.sendMessage(t.getUserNickname() + ": " + t.getMessage()).queue();
+								//throw new RuntimeException();
 							}
+							//Loop all webhooks looking for "GlobalChat"
 							for (Webhook hook : webhook) {
 								if (hook.getName().equalsIgnoreCase("GlobalChat")) {
-									String id = "574368341335080971";
+									WebhookClient client = builder.build();
+									WebhookMessageBuilder builder1 = new WebhookMessageBuilder();
+									
+									String id = null;
 									PreparedStatement getUserByGlobal = null;
 									try {
 										getUserByGlobal = Database.getPreparedStatement("getUserByGlobal");
@@ -375,21 +383,20 @@ public class HeroOne extends ListenerAdapter {
 									ResultSet results2 = getUserByGlobal.executeQuery();
 									if (results2.next()) {
 										id = results2.getString(1);
+										String avatar = "";
+										User user = HeroOne.jda.getUserById(id);
+										avatar = user.getAvatarUrl();
+										builder1.setAvatarUrl(avatar);
 									}
 									String nick = t.getUserNickname();
 									WebhookClientBuilder builder = hook.newClient(); // Get the first webhook..
 																						// I can't think of a
 																						// better way to do this
 																						// ATM.
-									WebhookClient client = builder.build();
-									WebhookMessageBuilder builder1 = new WebhookMessageBuilder();
+
 									builder1.setContent(t.getMessage()
 											.replaceFirst(Pattern.quote("<" + t.getUserNickname() + ">"), ""));
 									builder1.setUsername(nick);
-									String avatar = "";
-									User user = HeroOne.jda.getUserById(id);
-									avatar = user.getAvatarUrl();
-									builder1.setAvatarUrl(avatar);
 									WebhookMessage message1 = builder1.build();
 									client.send(message1);
 									client.close();
@@ -399,7 +406,6 @@ public class HeroOne extends ListenerAdapter {
 							channel.sendMessage(t.getUserNickname() + ": " + t.getMessage()).queue();
 						} catch (Exception e1) {
 							System.out.println(e1);
-							channel.sendMessage(t.getUserNickname() + ": " + t.getMessage()).queue();
 						}
 					}
 				} catch (Exception e) {
