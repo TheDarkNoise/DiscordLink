@@ -15,9 +15,13 @@ import net.dv8tion.jda.webhook.WebhookMessageBuilder;
 import pcl.HeroOne.util.Database;
 import pcl.HeroOne.util.httpd;
 import pcl.bridgebot.ChatServerLink.PackedMessageData;
+import pcl.bridgebot.httphandler.ChannelListHandler;
+import pcl.bridgebot.httphandler.IndexHandler;
+import pcl.bridgebot.httphandler.UserListHandler;
 
 import javax.security.auth.login.LoginException;
 
+import org.apache.commons.codec.Charsets;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 
@@ -26,13 +30,19 @@ import java.util.Map;
 import java.util.Scanner;
 import java.util.function.Consumer;
 import java.util.regex.Pattern;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
 import com.google.common.base.Splitter;
+import com.google.common.io.CharStreams;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
@@ -40,10 +50,10 @@ public class HeroOne extends ListenerAdapter
 {
 	static ChatServerLink link = null;
 	public static Integer httpdPort = null;
-	static JDA jda; 
+	public static JDA jda; 
 	public static httpd httpServer = new httpd();
 	public static String httpdSecret = null;
-	
+		
 	private static boolean initDatabase() throws SQLException {
 		Database.init();
 		Database.addStatement("CREATE TABLE IF NOT EXISTS Channels(globalName PRIMARY KEY, discordID)");
@@ -56,11 +66,14 @@ public class HeroOne extends ListenerAdapter
 		Database.addPreparedStatement("removeChannel","DELETE FROM Channels WHERE globalName = ?;");
 		Database.addPreparedStatement("getChannelByGlobal","SELECT * FROM Channels WHERE globalName = ?;");
 		Database.addPreparedStatement("getChannelByDiscordID","SELECT * FROM Channels WHERE discordID = ?;");
+		Database.addPreparedStatement("getAllChannels","SELECT * FROM Channels;");
 		
 		//UserMap
 		Database.addPreparedStatement("getUserByGlobal","SELECT discordID FROM UserMap WHERE globalID = ?;");
 		Database.addPreparedStatement("getUserByDiscordID","SELECT globalID FROM UserMap WHERE discordID = ?;");
 		Database.addPreparedStatement("addUser", "REPLACE INTO UserMap (globalID, discordID) VALUES (?,?);");
+		Database.addPreparedStatement("delser", "DELETE FROM UserMap WHERE discordID = ?;");
+		Database.addPreparedStatement("getAllUsers","SELECT globalID, discordID FROM UserMap;");
 		
 		//JSONStorage
 		Database.addPreparedStatement("storeJSON", "INSERT OR REPLACE INTO JsonData (mykey, store) VALUES (?, ?);");
@@ -183,7 +196,14 @@ public class HeroOne extends ListenerAdapter
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		 httpd.registerContext("/discord", new DiscordHandler(), "Discord");
+		 try {
+			 httpd.registerContext("/discord", new IndexHandler(), "Discord");
+			 httpd.registerContext("/channels", new ChannelListHandler(), "Channels");
+			 httpd.registerContext("/users", new UserListHandler(), "Users");
+		} catch (IOException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
 		//We construct a builder for a BOT account. If we wanted to use a CLIENT account
 		// we would use AccountType.CLIENT
 		try
@@ -303,64 +323,6 @@ public class HeroOne extends ListenerAdapter
 			}
 		}
 	}
-
-	static class DiscordHandler implements HttpHandler {
-		@Override
-		public void handle(HttpExchange t) throws IOException {
-			PreparedStatement addChannel = null;
-			PreparedStatement delChannel = null;
-			PreparedStatement addUser = null;
-			try {
-				addChannel = Database.getPreparedStatement("addChannel");
-				delChannel = Database.getPreparedStatement("removeChannel");
-				addUser = Database.getPreparedStatement("addUser");
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			String response = "DISCORD!";
-			List<NameValuePair> paramsList = URLEncodedUtils.parse(t.getRequestURI(),"utf-8");
-	        String query = t.getRequestURI().toString().split("\\?")[1];
-	        final Map<String, String> map = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(query);
-
-			t.sendResponseHeaders(200, response.getBytes().length);
-			
-			if (paramsList.size() > 1) {
-				if (map.get("secret").contentEquals(httpdSecret)) {
-					if (map.get("action").equals("addChan")) {
-						try {
-							addChannel.setString(1, map.get("gname"));
-							addChannel.setString(2, map.get("discordid"));
-							addChannel.execute();
-						} catch (SQLException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					} else if (map.get("action").equals("delChan")) {
-						try {
-							delChannel.setString(1, map.get("gname"));
-							delChannel.execute();
-						} catch (SQLException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					} else if (map.get("action").equals("addUser")) {
-						try {
-							addUser.setString(1, map.get("gname"));
-							addUser.setString(2, map.get("discordid"));
-							addUser.execute();
-						} catch (SQLException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}
-				}	
-			}
-			OutputStream os = t.getResponseBody();
-			os.write(response.getBytes());
-			os.close();
-		}
-	}
 	
 	//Game to Discord.
 	private static void senderClient() {
@@ -371,7 +333,6 @@ public class HeroOne extends ListenerAdapter
 				link.startLoop(new Consumer<ChatServerLink.PackedMessageData>() {
 					@Override
 					public void accept(PackedMessageData t) {
-						//
 						PreparedStatement getChannelByGlobal;
 						try {
 							getChannelByGlobal = Database.getPreparedStatement("getChannelByGlobal");
