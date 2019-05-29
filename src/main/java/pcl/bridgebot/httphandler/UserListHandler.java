@@ -36,13 +36,22 @@ public class UserListHandler implements HttpHandler {
 	    navData += "<div class=\"innertube\"><h1><a href=\"users\">Users</a></h1></div>";
 
 	    String userList = null;
-	    userList = "<table>";
+	    
+	    userList = "<table><form method=\"get\" action=\"/\">";
+	    userList = userList + "<tr><td>Secret:</td><td><input type='text' name='secret'></input></td></tr>";
+	    userList = userList + "<tr><td>Global ID:</td><td><input type='text' name='gname'></input></td></tr>";
+	    userList = userList + "<tr><td>Discord User ID:</td><td><input type='text' name='discordid'></input></td></tr>";
+	    userList = userList + "<input type='hidden' name='action' value='addUser'>";
+	    userList = userList + "<tr><td></td><td><input type='submit'></td></tr>";
+	    userList = userList + "</form></table><br><br>";
+	    
+	    userList = userList + "<table>";
 	    PreparedStatement getAllUsers;
 		try {
 			getAllUsers = Database.getPreparedStatement("getAllUsers");
 			ResultSet results = getAllUsers.executeQuery();
 			while (results.next()) {
-				userList = userList + "<tr><td>"+results.getString(1)+"</td><td>"+ HeroOne.jda.getUserById(results.getString(2)).getName() +"/" + results.getString(2) +"</td></tr>";
+				userList = userList + "<tr><td>"+results.getString(1)+"</td><td>"+ HeroOne.jda.getUserById(results.getString(2)).getName() +"/" + results.getString(2) +"</td><td><a>[Delete]</a></td></tr>";
 			}
 		} catch (Exception e) {
 			System.out.println(e);

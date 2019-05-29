@@ -53,14 +53,19 @@ public class ChatServerLink
 				}
 				// Send all the pending messages
 				while(true) {
-					// Get the next message to send
-					PackedMessageData pending = pendingMessageList.poll();
-					// If there's nothing to send, break (we don't have anything to do)
-					if(pending == null)
-						break;
-					// Send the pending message
-					byte[] dataToSend = pending.getPackedMessage();
-					outToServer.write(dataToSend);
+					try {
+						// Get the next message to send
+						PackedMessageData pending = pendingMessageList.poll();
+						// If there's nothing to send, break (we don't have anything to do)
+						if(pending == null)
+							break;
+						// Send the pending message
+						byte[] dataToSend = pending.getPackedMessage();
+						outToServer.write(dataToSend);
+					} catch(Exception e) {
+						// TODO proper error handling for the socket stuff
+						System.out.println("Send loop threw: " + e);
+					}
 				}
 				// Create a client "in" socket
 				InputStream inFromServer = clientSocket.getInputStream();
@@ -81,7 +86,7 @@ public class ChatServerLink
 						onMessageReceived.accept(result);
 					}
 				}
-				catch(IOException e) {
+				catch(Exception e) {
 					// NO OP (server was closed)
 					System.out.println("inFromServer: " + e);
 				}
@@ -109,8 +114,8 @@ public class ChatServerLink
 
 		public byte[] getPackedMessage() {
 			return PackedMessageData.getPackedMessageFromData(
-				type, userId, chatroom, message, userNickname
-			);
+					type, userId, chatroom, message, userNickname
+					);
 		}
 
 		public static byte[] getPackedMessageFromData(MESSAGE_TYPE messageType, int userId, String chatroom, String message, String usernickname) {
@@ -129,11 +134,11 @@ public class ChatServerLink
 					Message.
 				PascalStr (Int8 + Char[])
 					Nickname (ignored by the server, sent for completeness)
-			*/
+			 */
 			int messageSize = 2 + 1 + 4 // Message head (packet size, message type, user ID)
-				+ chatroom.length() + 1 // Pascal string for chatroom
-				+ message.getBytes(StandardCharsets.UTF_8).length + 1 // Pascal string for message
-				+ usernickname.length() + 1; // Pascal string for nickname
+					+ chatroom.length() + 1 // Pascal string for chatroom
+					+ message.getBytes(StandardCharsets.UTF_8).length + 1 // Pascal string for message
+					+ usernickname.length() + 1; // Pascal string for nickname
 			ByteBuffer buffer = ByteBuffer.allocate(messageSize);
 			buffer.order(ByteOrder.LITTLE_ENDIAN);
 			// Add the packet size
@@ -151,16 +156,16 @@ public class ChatServerLink
 			buffer.put(Arrays.copyOf(usernickname.getBytes(), usernickname.length()));
 			return buffer.array();
 		}
-	
+
 		public static PackedMessageData getDataFromPackedMessage(byte[] packedMessage, int announcedSize) {
-			
+
 			ByteBuffer buffer = ByteBuffer.wrap(packedMessage);
 			buffer.order(ByteOrder.LITTLE_ENDIAN);
 
 			// Get packet size (for checking)
 			short packetSize = buffer.getShort();
 			assert packetSize == announcedSize;
-	
+
 			PackedMessageData result = new PackedMessageData();
 			byte messageTypeId = buffer.get();
 			if(messageTypeId == 0x64) {
@@ -175,17 +180,17 @@ public class ChatServerLink
 						Message.
 					PascalStr (Int8 + Char[])
 						Nickname
-				*/
+				 */
 				result.type = MESSAGE_TYPE.CHANNEL;
-	
+
 				result.userId = buffer.getInt();
-		
+
 				// Pascal string for chatroom
 				byte chatroomLength = buffer.get();
 				byte[] chatroomRaw = new byte[chatroomLength];
 				buffer.get(chatroomRaw);
 				result.chatroom = new String(chatroomRaw);
-		
+
 				// Pascal string for message
 				byte messageLength = buffer.get();
 				byte[] messageRaw = new byte[messageLength];
@@ -196,7 +201,7 @@ public class ChatServerLink
 					result.message = new String(messageRaw);
 					e.printStackTrace();
 				}
-		
+
 				// Pascal string for nickname
 				byte nicknameLength = buffer.get();
 				byte[] nicknameRaw = new byte[nicknameLength];
@@ -212,27 +217,27 @@ public class ChatServerLink
 						Chat room name
 					PascalStr (Int8 + Char[])
 						Message
-				*/
+				 */
 				result.type = MESSAGE_TYPE.MOTD;
-		
+
 				// Pascal string for chatroom
 				byte chatroomLength = buffer.get();
 				byte[] chatroomRaw = new byte[chatroomLength];
 				buffer.get(chatroomRaw);
 				result.chatroom = new String(chatroomRaw);
-		
+
 				// Pascal string for message
 				byte messageLength = buffer.get();
 				byte[] messageRaw = new byte[messageLength];
 				buffer.get(messageRaw);
 				result.message = new String(messageRaw);
-				
+
 				result.userNickname = new String("MOTD Update");
-		
+
 			}
 			return result;
 		}
-	
+
 		public enum MESSAGE_TYPE
 		{
 			CHANNEL,
