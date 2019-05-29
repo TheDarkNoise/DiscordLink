@@ -52,12 +52,11 @@ public class IndexHandler implements HttpHandler {
 			e.printStackTrace();
 		}
 		List<NameValuePair> paramsList = URLEncodedUtils.parse(t.getRequestURI(),"utf-8");
-        String query = t.getRequestURI().toString().split("\\?")[1];
-        final Map<String, String> map = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(query);
 
-		t.sendResponseHeaders(200, response.getBytes().length);
-		
-		if (paramsList.size() > 1) {
+        if (paramsList.size() > 1) {
+        	String query = t.getRequestURI().toString().split("\\?")[1];
+        	final Map<String, String> map = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(query);		
+
 			if (map.get("secret").contentEquals(HeroOne.httpdSecret)) {
 				if (map.get("action").equals("addChan")) {
 					try {
@@ -99,6 +98,7 @@ public class IndexHandler implements HttpHandler {
 				response = response + line.replace("#BODY#", target).replace("#NAVIGATION#", navData).replace("#DATA#", bodyText)+"\n";
 			}
 		}
+		t.sendResponseHeaders(200, response.getBytes().length);
 		OutputStream os = t.getResponseBody();
 		os.write(response.getBytes());
 		os.close();

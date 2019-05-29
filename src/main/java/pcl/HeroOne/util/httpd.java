@@ -11,6 +11,7 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 import pcl.bridgebot.HeroOne;
+import pcl.bridgebot.httphandler.IndexHandler;
 
 @SuppressWarnings("restriction")
 public class httpd {
@@ -50,18 +51,5 @@ public class httpd {
 	
 	public static String getBaseDomain() {
 		return baseDomain;
-	}
-	
-	static class IndexHandler implements HttpHandler {
-		
-		static String html;
-		@Override
-		public void handle(HttpExchange t) throws IOException {
-			String response = "Hello!";
-			t.sendResponseHeaders(200, response.getBytes().length);
-			OutputStream os = t.getResponseBody();
-			os.write(response.getBytes());
-			os.close();
-		}
 	}
 }

@@ -197,7 +197,7 @@ public class HeroOne extends ListenerAdapter
 			e1.printStackTrace();
 		}
 		 try {
-			 httpd.registerContext("/discord", new IndexHandler(), "Discord");
+			 httpd.registerContext("/", new IndexHandler(), "Discord");
 			 httpd.registerContext("/channels", new ChannelListHandler(), "Channels");
 			 httpd.registerContext("/users", new UserListHandler(), "Users");
 		} catch (IOException e1) {
