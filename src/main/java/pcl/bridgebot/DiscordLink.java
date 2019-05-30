@@ -48,7 +48,7 @@ import com.google.common.io.CharStreams;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
-public class HeroOne extends ListenerAdapter {
+public class DiscordLink extends ListenerAdapter {
 	static ChatServerLink link = null;
 	public static Integer httpdPort = null;
 	public static JDA jda;
@@ -216,7 +216,7 @@ public class HeroOne extends ListenerAdapter {
 			ResultSet results = getSettings.executeQuery();
 			if (results.next()) {
 				jda = new JDABuilder(results.getString(1)) // The token of the account that is logging in.
-						.addEventListener(new HeroOne()) // An instance of a class that will handle events.
+						.addEventListener(new DiscordLink()) // An instance of a class that will handle events.
 						.build();
 				jda.awaitReady(); // Blocking guarantees that JDA will be completely loaded.
 				System.out.println("Finished Building JDA!");
@@ -359,7 +359,7 @@ public class HeroOne extends ListenerAdapter {
 					ResultSet results = getChannelByGlobal.executeQuery();
 					if (results.next()) {
 						//Get the Discord TextChannel instance by the ID
-						TextChannel channel = HeroOne.jda.getTextChannelById(results.getString(2));
+						TextChannel channel = DiscordLink.jda.getTextChannelById(results.getString(2));
 						try {
 							//See if there are any webhooks if not send the message and return
 							List<Webhook> webhook = channel.getWebhooks().complete(); // some webhook instance
@@ -388,7 +388,7 @@ public class HeroOne extends ListenerAdapter {
 									getUserByGlobal.setString(1, Integer.toString(inMsg.getUserId()));
 									ResultSet results2 = getUserByGlobal.executeQuery();
 									if (results2.next()) {
-										User user = HeroOne.jda.getUserById(results2.getString(1));
+										User user = DiscordLink.jda.getUserById(results2.getString(1));
 										builder1.setAvatarUrl(user.getAvatarUrl());
 									} else {
 										builder1.setAvatarUrl(hook.getDefaultUser().getAvatarUrl());

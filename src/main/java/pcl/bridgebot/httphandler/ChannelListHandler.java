@@ -22,7 +22,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import pcl.HeroOne.util.Database;
-import pcl.bridgebot.HeroOne;
+import pcl.bridgebot.DiscordLink;
 
 public class ChannelListHandler implements HttpHandler {
 	
@@ -57,7 +57,7 @@ public class ChannelListHandler implements HttpHandler {
 			getAllChannels = Database.getPreparedStatement("getAllChannels");
 			ResultSet results = getAllChannels.executeQuery();
 			while (results.next()) {
-				channelList = channelList + "<tr><td>"+results.getString(1)+"</td><td>"+ HeroOne.jda.getTextChannelById(results.getString(2)).getName() +"/" + results.getString(2) +"</td><td><a href=\"#\"" + 
+				channelList = channelList + "<tr><td>"+results.getString(1)+"</td><td>"+ DiscordLink.jda.getTextChannelById(results.getString(2)).getName() +"/" + results.getString(2) +"</td><td><a href=\"#\"" + 
 						"    title=\"delete\" onclick=\"this.href='/?secret=' + document.getElementById('secret').value + '&action=delChan&gname=" + results.getString(1) + "'\">[Delete]</a></td></tr>";
 			}
 		} catch (Exception e) {

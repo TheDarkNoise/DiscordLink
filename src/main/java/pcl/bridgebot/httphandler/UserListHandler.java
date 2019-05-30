@@ -16,7 +16,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import pcl.HeroOne.util.Database;
-import pcl.bridgebot.HeroOne;
+import pcl.bridgebot.DiscordLink;
 
 public class UserListHandler implements HttpHandler {
 	
@@ -52,7 +52,7 @@ public class UserListHandler implements HttpHandler {
 			getAllUsers = Database.getPreparedStatement("getAllUsers");
 			ResultSet results = getAllUsers.executeQuery();
 			while (results.next()) {
-				userList = userList + "<tr><td>"+results.getString(1)+"</td><td>"+ HeroOne.jda.getUserById(results.getString(2)).getName() +"/" + results.getString(2) +"</td><td><a href=\"#\"" + 
+				userList = userList + "<tr><td>"+results.getString(1)+"</td><td>"+ DiscordLink.jda.getUserById(results.getString(2)).getName() +"/" + results.getString(2) +"</td><td><a href=\"#\"" + 
 						"    title=\"delete\" onclick=\"this.href='/?secret=' + document.getElementById('secret').value + '&action=delUser&discordid=" + results.getString(2) + "'\">[Delete]</a></td></tr>";
 			}
 		} catch (Exception e) {

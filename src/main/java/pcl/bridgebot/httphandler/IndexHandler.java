@@ -22,7 +22,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 
 import pcl.HeroOne.util.Database;
-import pcl.bridgebot.HeroOne;
+import pcl.bridgebot.DiscordLink;
 
 public class IndexHandler implements HttpHandler {
 	static String html;
@@ -59,7 +59,7 @@ public class IndexHandler implements HttpHandler {
         	String query = t.getRequestURI().toString().split("\\?")[1];
         	final Map<String, String> map = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(query);		
 
-			if (map.get("secret").contentEquals(HeroOne.httpdSecret)) {
+			if (map.get("secret").contentEquals(DiscordLink.httpdSecret)) {
 				if (map.get("action").equals("addChan")) {
 					try {
 						String gname = java.net.URLDecoder.decode(map.get("gname"), StandardCharsets.UTF_8.name());

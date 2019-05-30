@@ -10,7 +10,7 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
-import pcl.bridgebot.HeroOne;
+import pcl.bridgebot.DiscordLink;
 import pcl.bridgebot.httphandler.IndexHandler;
 
 @SuppressWarnings("restriction")
@@ -19,7 +19,7 @@ public class httpd {
 	static String baseDomain;
 	public static Map<String, String> pages = new LinkedHashMap<String, String>();
 	public static void setup() throws Exception {
-        server = HttpServer.create(new InetSocketAddress(HeroOne.httpdPort), 0);
+        server = HttpServer.create(new InetSocketAddress(DiscordLink.httpdPort), 0);
 		registerContext("/", new IndexHandler(), "Home");
 	}
     /**
@@ -38,7 +38,7 @@ public class httpd {
     
 	public static void start() throws Exception {
 		if(server != null) {
-			System.out.println("Starting HTTPD On port " + HeroOne.httpdPort);
+			System.out.println("Starting HTTPD On port " + DiscordLink.httpdPort);
 			server.setExecutor(null); // creates a default executor
 	        server.start();
 		} else {
