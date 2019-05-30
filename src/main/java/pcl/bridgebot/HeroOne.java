@@ -388,11 +388,8 @@ public class HeroOne extends ListenerAdapter {
 									getUserByGlobal.setString(1, Integer.toString(t.getUserId()));
 									ResultSet results2 = getUserByGlobal.executeQuery();
 									if (results2.next()) {
-										id = results2.getString(1);
-										String avatar = "";
-										User user = HeroOne.jda.getUserById(id);
-										avatar = user.getAvatarUrl();
-										builder1.setAvatarUrl(avatar);
+										User user = HeroOne.jda.getUserById(results2.getString(1));
+										builder1.setAvatarUrl(user.getAvatarUrl());
 									} else {
 										builder1.setAvatarUrl(hook.getDefaultUser().getAvatarUrl());
 									}
