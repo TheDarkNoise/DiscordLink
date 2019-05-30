@@ -43,16 +43,18 @@ public class IndexHandler implements HttpHandler {
 		PreparedStatement addChannel = null;
 		PreparedStatement delChannel = null;
 		PreparedStatement addUser = null;
+		PreparedStatement delUser = null;
 		try {
 			addChannel = Database.getPreparedStatement("addChannel");
 			delChannel = Database.getPreparedStatement("removeChannel");
 			addUser = Database.getPreparedStatement("addUser");
+			delUser = Database.getPreparedStatement("delUser");
 		} catch (Exception e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 		List<NameValuePair> paramsList = URLEncodedUtils.parse(t.getRequestURI(),"utf-8");
-
+		String bodyText ="Discord!";
         if (paramsList.size() > 1) {
         	String query = t.getRequestURI().toString().split("\\?")[1];
         	final Map<String, String> map = Splitter.on('&').trimResults().withKeyValueSeparator("=").split(query);		
@@ -64,6 +66,7 @@ public class IndexHandler implements HttpHandler {
 						addChannel.setString(1, gname);
 						addChannel.setString(2, map.get("discordid"));
 						addChannel.execute();
+						bodyText ="<meta http-equiv=\"refresh\" content=\"0; url=./channels\" />";
 					} catch (SQLException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -72,6 +75,16 @@ public class IndexHandler implements HttpHandler {
 					try {
 						delChannel.setString(1, map.get("gname"));
 						delChannel.execute();
+						bodyText ="<meta http-equiv=\"refresh\" content=\"0; url=./channels\" />";
+					} catch (SQLException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
+				} else if (map.get("action").equals("delUser")) {
+					try {
+						delUser.setString(1, map.get("discordid"));
+						delUser.execute();
+						bodyText ="<meta http-equiv=\"refresh\" content=\"0; url=./users\" />";
 					} catch (SQLException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -81,6 +94,7 @@ public class IndexHandler implements HttpHandler {
 						addUser.setString(1, map.get("gname"));
 						addUser.setString(2, map.get("discordid"));
 						addUser.execute();
+						bodyText ="<meta http-equiv=\"refresh\" content=\"0; url=./users\" />";
 					} catch (SQLException e) {
 						// TODO Auto-generated catch block
 						e.printStackTrace();
@@ -89,7 +103,7 @@ public class IndexHandler implements HttpHandler {
 			}	
 		}
 		
-		String bodyText ="Discord!";
+		
 		
 		InputStream is = new ByteArrayInputStream(html.getBytes());
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {

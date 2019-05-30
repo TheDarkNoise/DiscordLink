@@ -74,7 +74,7 @@ public class HeroOne extends ListenerAdapter {
 		Database.addPreparedStatement("getUserByGlobal", "SELECT discordID FROM UserMap WHERE globalID = ?;");
 		Database.addPreparedStatement("getUserByDiscordID", "SELECT globalID FROM UserMap WHERE discordID = ?;");
 		Database.addPreparedStatement("addUser", "REPLACE INTO UserMap (globalID, discordID) VALUES (?,?);");
-		Database.addPreparedStatement("delser", "DELETE FROM UserMap WHERE discordID = ?;");
+		Database.addPreparedStatement("delUser", "DELETE FROM UserMap WHERE discordID = ?;");
 		Database.addPreparedStatement("getAllUsers", "SELECT globalID, discordID FROM UserMap;");
 
 		// JSONStorage
@@ -350,12 +350,12 @@ public class HeroOne extends ListenerAdapter {
 				}
 			}
 
-			private void handlePackedMessage(IPackedMessageData t) {
+			private void handlePackedMessage(IPackedMessageData inMsg) {
 				PreparedStatement getChannelByGlobal;
 				try {
 					//Get the Discord TextChannel ID
 					getChannelByGlobal = Database.getPreparedStatement("getChannelByGlobal");
-					getChannelByGlobal.setString(1, t.getChatroom());
+					getChannelByGlobal.setString(1, inMsg.getChatroom());
 					ResultSet results = getChannelByGlobal.executeQuery();
 					if (results.next()) {
 						//Get the Discord TextChannel instance by the ID
@@ -363,9 +363,9 @@ public class HeroOne extends ListenerAdapter {
 						try {
 							//See if there are any webhooks if not send the message and return
 							List<Webhook> webhook = channel.getWebhooks().complete(); // some webhook instance
+							System.out.println("Webhook size " + webhook.size());
 							if (webhook.size() == 0) {
-								channel.sendMessage(t.getUserNickname() + ": " + t.getMessage()).queue();
-								//throw new RuntimeException();
+								channel.sendMessage(inMsg.getUserNickname() + ": " + inMsg.getMessage()).queue();
 							}
 							//Loop all webhooks looking for "GlobalChat"
 							for (Webhook hook : webhook) {
@@ -385,7 +385,7 @@ public class HeroOne extends ListenerAdapter {
 										// TODO Auto-generated catch block
 										e2.printStackTrace();
 									}
-									getUserByGlobal.setString(1, Integer.toString(t.getUserId()));
+									getUserByGlobal.setString(1, Integer.toString(inMsg.getUserId()));
 									ResultSet results2 = getUserByGlobal.executeQuery();
 									if (results2.next()) {
 										User user = HeroOne.jda.getUserById(results2.getString(1));
@@ -393,11 +393,11 @@ public class HeroOne extends ListenerAdapter {
 									} else {
 										builder1.setAvatarUrl(hook.getDefaultUser().getAvatarUrl());
 									}
-									String nick = t.getUserNickname();
+									String nick = inMsg.getUserNickname();
 
 
-									builder1.setContent(t.getMessage()
-											.replaceFirst(Pattern.quote("<" + t.getUserNickname() + ">"), ""));
+									builder1.setContent(inMsg.getMessage()
+											.replaceFirst(Pattern.quote("<" + inMsg.getUserNickname() + ">"), ""));
 									builder1.setUsername(nick);
 									WebhookMessage message1 = builder1.build();
 									client.send(message1);
@@ -405,7 +405,7 @@ public class HeroOne extends ListenerAdapter {
 									return;
 								}
 							}
-							channel.sendMessage(t.getUserNickname() + ": " + t.getMessage()).queue();
+							channel.sendMessage(inMsg.getUserNickname() + ": " + inMsg.getMessage()).queue();
 						} catch (Exception e1) {
 							System.out.println(e1);
 						}
