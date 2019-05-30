@@ -363,7 +363,7 @@ public class HeroOne extends ListenerAdapter {
 						try {
 							//See if there are any webhooks if not send the message and return
 							List<Webhook> webhook = channel.getWebhooks().complete(); // some webhook instance
-							System.out.println("Webhook size " + webhook.size());
+
 							if (webhook.size() == 0) {
 								channel.sendMessage(inMsg.getUserNickname() + ": " + inMsg.getMessage()).queue();
 							}

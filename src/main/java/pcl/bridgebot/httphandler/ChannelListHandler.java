@@ -49,7 +49,9 @@ public class ChannelListHandler implements HttpHandler {
 	    channelList = channelList + "<input type='hidden' name='action' value='addChan'>";
 	    channelList = channelList + "<tr><td></td><td><input type='submit'></td></tr>";
 	    channelList = channelList + "</form></table><br><br>";
+	    
 	    channelList = channelList + "<table>";
+	    channelList = channelList + "<tr><th>Global Channel</th><th>Discord Channel</th><th>Manage</th></tr>";
 	    PreparedStatement getAllChannels;
 		try {
 			getAllChannels = Database.getPreparedStatement("getAllChannels");

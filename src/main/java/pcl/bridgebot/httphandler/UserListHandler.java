@@ -46,6 +46,7 @@ public class UserListHandler implements HttpHandler {
 	    userList = userList + "</form></table><br><br>";
 	    
 	    userList = userList + "<table>";
+	    userList = userList + "<tr><th>Global ID</th><th>Discord Name</th><th>Manage</th></tr>";
 	    PreparedStatement getAllUsers;
 		try {
 			getAllUsers = Database.getPreparedStatement("getAllUsers");
