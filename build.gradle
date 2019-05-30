@@ -15,7 +15,7 @@ plugins {
 
 jar {
     manifest {
-        attributes 'Main-Class': 'pcl.bridgebot.HeroOne'
+        attributes 'Main-Class': 'pcl.bridgebot.DiscordLink'
     }
  
     doFirst {
