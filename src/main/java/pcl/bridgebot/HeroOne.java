@@ -199,6 +199,7 @@ public class HeroOne extends ListenerAdapter {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
+		//Register the httpdHandlers for the various control pages
 		try {
 			httpd.registerContext("/", new IndexHandler(), "Discord");
 			httpd.registerContext("/channels", new ChannelListHandler(), "Channels");
@@ -267,7 +268,7 @@ public class HeroOne extends ListenerAdapter {
 		// These are provided with every event in JDA
 		jda = event.getJDA(); // JDA, the core of the api.
 		long responseNumber = event.getResponseNumber();// The amount of discord events that JDA has received since the
-														// last reconnect.
+		// last reconnect.
 
 		// Event specific information
 		User author = event.getAuthor(); // The user that sent the message
@@ -290,16 +291,17 @@ public class HeroOne extends ListenerAdapter {
 			// the message possibly not being from a Guild!
 
 			Guild guild = event.getGuild(); // The Guild that this message was sent in. (note, in the API, Guilds are
-											// Servers)
+			// Servers)
 			TextChannel textChannel = event.getTextChannel(); // The TextChannel that this message was sent to.
 			Member member = event.getMember(); // This Member that sent the message. Contains Guild specific information
-												// about the User!
+			// about the User!
 
 			String name;
 			if (message.isWebhookMessage()) {
 				name = author.getName();
-				return; // If this is a Webhook message, then there is no Member associated also dump
-						// here we don't wanna see it in game.
+				return; 
+				// If this is a Webhook message, then there is no Member associated also dump
+				// here we don't wanna see it in game.
 			} // with the User, thus we default to the author for name.
 			else {
 				name = member.getEffectiveName(); // This will either use the Member's nickname if they have one,
@@ -374,7 +376,7 @@ public class HeroOne extends ListenerAdapter {
 									// ATM.
 									WebhookClient client = builder.build();
 									WebhookMessageBuilder builder1 = new WebhookMessageBuilder();
-									
+
 									String id = null;
 									PreparedStatement getUserByGlobal = null;
 									try {
@@ -391,6 +393,8 @@ public class HeroOne extends ListenerAdapter {
 										User user = HeroOne.jda.getUserById(id);
 										avatar = user.getAvatarUrl();
 										builder1.setAvatarUrl(avatar);
+									} else {
+										builder1.setAvatarUrl(hook.getDefaultUser().getAvatarUrl());
 									}
 									String nick = t.getUserNickname();
 
