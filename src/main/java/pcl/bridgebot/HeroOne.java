@@ -368,6 +368,10 @@ public class HeroOne extends ListenerAdapter {
 							//Loop all webhooks looking for "GlobalChat"
 							for (Webhook hook : webhook) {
 								if (hook.getName().equalsIgnoreCase("GlobalChat")) {
+									WebhookClientBuilder builder = hook.newClient(); // Get the first webhook..
+									// I can't think of a
+									// better way to do this
+									// ATM.
 									WebhookClient client = builder.build();
 									WebhookMessageBuilder builder1 = new WebhookMessageBuilder();
 									
@@ -389,10 +393,7 @@ public class HeroOne extends ListenerAdapter {
 										builder1.setAvatarUrl(avatar);
 									}
 									String nick = t.getUserNickname();
-									WebhookClientBuilder builder = hook.newClient(); // Get the first webhook..
-																						// I can't think of a
-																						// better way to do this
-																						// ATM.
+
 
 									builder1.setContent(t.getMessage()
 											.replaceFirst(Pattern.quote("<" + t.getUserNickname() + ">"), ""));
