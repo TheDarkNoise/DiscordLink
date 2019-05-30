@@ -31,8 +31,11 @@ public class UTF8MessageSplitter implements IUTF8MessageSplitter {
                 // The chunk itself is too big. Split it in several smaller 255-bytes messages
                 // and send that.
                 // Store the previous chunk as "pending message"
-                pendingMessageList.add(aggregatedMessage);
-                aggregatedMessage = "";
+                // Special case for the very first chunk.
+                if(!aggregatedMessage.equals("")) {
+                    pendingMessageList.add(aggregatedMessage);
+                    aggregatedMessage = "";
+                }
                 // Note: to split properly (and not miss characters), we first need to split the
                 // string into characters. Then we aggregate characters until done and send each
                 // chunk.

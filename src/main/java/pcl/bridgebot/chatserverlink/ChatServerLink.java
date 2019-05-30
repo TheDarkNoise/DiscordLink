@@ -2,6 +2,7 @@ package pcl.bridgebot.chatserverlink;
 
 import java.io.DataOutputStream;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.Socket;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
@@ -71,7 +72,7 @@ public class ChatServerLink {
 			// Initialize the socket
 			Socket clientSocket = new Socket(hostName, portNumber);
 			InputStream inFromServer = clientSocket.getInputStream();
-			DataOutputStream outToServer = new DataOutputStream(clientSocket.getOutputStream());
+			OutputStream outToServer = clientSocket.getOutputStream();
 
 			while (shouldRun) {
 				// Send all the pending messages
@@ -85,7 +86,7 @@ public class ChatServerLink {
 					// Send the pending message
 					try {
 						byte[] dataToSend = pending.getPackedMessage();
-						outToServer.write(dataToSend);
+						outToServer.write(dataToSend, 0, dataToSend.length);
 					} catch (Exception e) {
 						// NO OP (server was closed)
 						System.out.println("Issue while sending packet : " + e);

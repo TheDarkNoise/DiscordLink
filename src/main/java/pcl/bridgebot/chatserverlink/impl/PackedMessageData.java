@@ -130,6 +130,10 @@ public class PackedMessageData implements IPackedMessageData {
             result.message = getPascalStringFromBuffer(buffer, "Message");
             // Pascal string for nickname
             result.userNickname = getPascalStringFromBuffer(buffer, "Username");
+            if (buffer.position() != packetSize)
+                throw new InvalidPackedMessageException(
+                        String.format("End packet byte position differs from announced size %04X", packetSize),
+                        buffer.position());
             return result;
         }
 
@@ -146,6 +150,10 @@ public class PackedMessageData implements IPackedMessageData {
             // Pascal string for message
             result.message = getPascalStringFromBuffer(buffer, "Message");
             result.userNickname = new String("MOTD Update");
+            if (buffer.position() != packetSize)
+                throw new InvalidPackedMessageException(
+                        String.format("End packet byte position differs from announced size %04X", packetSize),
+                        buffer.position());
             return result;
         }
 

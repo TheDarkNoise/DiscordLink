@@ -9,6 +9,9 @@ import pcl.bridgebot.chatserverlink.InvalidPackedMessageException;
 
 import static org.junit.Assert.*;
 
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
+
 public class PackedMessageDataTest {
     @Test
     public void itShouldWrapAndUnwrapAValidMessageProperly() throws InvalidPackedMessageException {
@@ -26,6 +29,23 @@ public class PackedMessageDataTest {
     @Test
     public void itShouldWrapAndUnwrapAnUTFMessageProperly() throws InvalidPackedMessageException {
         PackedMessageData originalData = new PackedMessageData("√chat", 0x10, "∀a∈B", "∑a");
+        byte[] packedMessage = originalData.getPackedMessage();
+        PackedMessageData unpackedData = PackedMessageData.getDataFromPackedMessage(packedMessage,
+                packedMessage.length);
+        assertEquals(originalData.getChatroom(), unpackedData.getChatroom());
+        assertEquals(originalData.getMessage(), unpackedData.getMessage());
+        assertEquals(originalData.getMessageType(), unpackedData.getMessageType());
+        assertEquals(originalData.getUserId(), unpackedData.getUserId());
+        assertEquals(originalData.getUserNickname(), unpackedData.getUserNickname());
+    }
+
+    @Test
+    public void itShouldWrapAndUnwrapAValidMaxSizedProperly() throws InvalidPackedMessageException {
+        PackedMessageData originalData = new PackedMessageData(
+            IntStream.range(0, 255).mapToObj(i -> "1").collect(Collectors.joining("")),
+                0x10,
+                IntStream.range(0, 255).mapToObj(i -> "2").collect(Collectors.joining("")),
+                IntStream.range(0, 255).mapToObj(i -> "3").collect(Collectors.joining("")));
         byte[] packedMessage = originalData.getPackedMessage();
         PackedMessageData unpackedData = PackedMessageData.getDataFromPackedMessage(packedMessage,
                 packedMessage.length);
@@ -62,7 +82,8 @@ public class PackedMessageDataTest {
     @Test
     public void itShouldGracefullyHandleMessagesWithMismatchedAnnouncedSizes() {
         try {
-            PackedMessageData.getDataFromPackedMessage(new byte[] { 0x00, 0x01, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, 1);
+            PackedMessageData.getDataFromPackedMessage(
+                    new byte[] { 0x00, 0x01, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, 1);
             fail("Exception not thrown");
         } catch (InvalidPackedMessageException e) {
             assertTrue(true);
@@ -72,10 +93,25 @@ public class PackedMessageDataTest {
     @Test
     public void itShouldGracefullyHandleMessagesWithInvalidStrings() {
         try {
-            PackedMessageData.getDataFromPackedMessage(new byte[] { 0x00, 0x01, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, 0);
+            PackedMessageData.getDataFromPackedMessage(
+                    new byte[] { 0x00, 0x01, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 }, 0);
             fail("Exception not thrown");
         } catch (InvalidPackedMessageException e) {
             assertTrue(true);
         }
     }
+
+    @Test
+    public void itShouldGracefullyHandleAnTooLongMessage() throws InvalidPackedMessageException {
+        try {
+            PackedMessageData originalData = new PackedMessageData("Test", 0x10, "Test",
+            IntStream.range(0, 256).mapToObj(i -> "1").collect(Collectors.joining("")));
+            byte[] packedMessage = originalData.getPackedMessage();
+            PackedMessageData.getDataFromPackedMessage(packedMessage, packedMessage.length);
+            fail("Exception not thrown");
+        } catch (InvalidPackedMessageException e) {
+            assertEquals("Byte 003F : End packet byte position differs from announced size 0112", e.getMessage());
+        }
+    }
+
 }
