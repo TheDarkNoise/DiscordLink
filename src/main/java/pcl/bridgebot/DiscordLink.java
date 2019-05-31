@@ -98,6 +98,8 @@ public class DiscordLink extends ListenerAdapter {
 		String chatserver = null;
 		Integer chatserverport = null;
 		try {
+			//String[] httpdArgs = new String[]{"7080"};
+			//httpdNew.main(httpdArgs);
 			getSettings = Database.getPreparedStatement("getSettings");
 			setSettings = Database.getPreparedStatement("setSettings");
 
@@ -123,7 +125,6 @@ public class DiscordLink extends ListenerAdapter {
 
 				System.out.println("HTTPd secret, basically the password sent with all get requests: ");
 				String httpdSecret = scanner.nextLine();
-
 				try {
 					setSettings.setString(1, "discordToken");
 					setSettings.setString(2, discordToken);
@@ -144,12 +145,15 @@ public class DiscordLink extends ListenerAdapter {
 					setSettings.setString(1, "httpdsecret");
 					setSettings.setString(2, httpdSecret);
 					setSettings.execute();
+					
+					setSettings.setString(1, "chatserverport");
+					setSettings.setString(2, "31415");
+					setSettings.execute();
 				} catch (SQLException e) {
 					// TODO Auto-generated catch block
 					e.printStackTrace();
 				}
-				System.out.println(
-						"If you need to modify these settings you can open 'discordlinkll.sqlite3' in an SQLite editor.");
+				System.out.println("If you need to modify these settings you can open 'discordlink.sqlite3' in an SQLite editor.");
 				scanner.close();
 			}
 
@@ -176,6 +180,7 @@ public class DiscordLink extends ListenerAdapter {
 		}
 		link = new ChatServerLink(chatserver, chatserverport);
 		try {
+			
 			httpd.setup();
 			httpd.start();
 		} catch (Exception e1) {

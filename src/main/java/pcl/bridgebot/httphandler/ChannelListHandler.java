@@ -30,10 +30,7 @@ public class ChannelListHandler implements HttpHandler {
 		String target = t.getRequestURI().toString();
 		String response = "";
 
-		String navData = "";
-	    navData += "<div class=\"innertube\"><h1><a href=\"channels\">Channels</a></h1></div>";
-	    navData += "<div class=\"innertube\"><h1><a href=\"users\">Users</a></h1></div>";
-	    String channelList = null;      
+		String channelList = null;      
 	    
 	    channelList = "<table><form method=\"get\" action=\"/\">";
 	    channelList = channelList + "<tr><td>Secret:</td><td><input type='text' name='secret' id='secret'></td></tr>";
@@ -63,7 +60,7 @@ public class ChannelListHandler implements HttpHandler {
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {
 			String line = null;
 			while ((line = br.readLine()) != null) {
-				response = response + line.replace("#BODY#", target).replace("#NAVIGATION#", navData).replace("#DATA#", channelList)+"\n";
+				response = response + line.replace("#BODY#", target).replace("#NAVIGATION#", IndexHandler.navData).replace("#DATA#", channelList)+"\n";
 			}
 		}
 		t.sendResponseHeaders(200, response.getBytes().length);

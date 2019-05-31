@@ -26,6 +26,7 @@ import pcl.bridgebot.DiscordLink;
 
 public class IndexHandler implements HttpHandler {
 	static String html;
+	public static String navData;
 	@SuppressWarnings("deprecation")
 	public IndexHandler() throws IOException {
 		InputStream htmlIn = getClass().getResourceAsStream("/html/discord.html");
@@ -36,8 +37,7 @@ public class IndexHandler implements HttpHandler {
 	public void handle(HttpExchange t) throws IOException {
 		String target = t.getRequestURI().toString();
 		String response = "";
-
-		String navData = "";
+		
 	    navData += "<div class=\"innertube\"><h1><a href=\"channels\">Channels</a></h1></div>";
 	    navData += "<div class=\"innertube\"><h1><a href=\"users\">Users</a></h1></div>";
 

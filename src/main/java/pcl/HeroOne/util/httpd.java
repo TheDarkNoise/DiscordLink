@@ -8,7 +8,6 @@ import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
 import pcl.bridgebot.DiscordLink;
-import pcl.bridgebot.httphandler.IndexHandler;
 
 @SuppressWarnings("restriction")
 public class httpd {
@@ -17,7 +16,6 @@ public class httpd {
 	public static Map<String, String> pages = new LinkedHashMap<String, String>();
 	public static void setup() throws Exception {
         server = HttpServer.create(new InetSocketAddress(DiscordLink.httpdPort), 0);
-		registerContext("/", new IndexHandler(), "Home");
 	}
     /**
      * Creates a route from a URL to a HttpHandler
