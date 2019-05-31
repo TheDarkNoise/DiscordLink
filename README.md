@@ -1,5 +1,5 @@
 # DiscordLink
-Java based CoH Global to Discord relay using JDA
+Java based CoH Global to Discord relay using JDA (Only for i25/SCoRE based servers currently)
 =========
 
 This bot relays messages from a simple and propietary format to a Discord Guild.
@@ -25,7 +25,20 @@ the message stream begins immediately; there's no handshake or authentication.
 The user nickname is always sent by the server, but ignored when the server
 receives a mesage; it retrieves the nickname from its internal user table.
 
-User List
+Setup
 =========
 
-The mapping between Discord ID and Global ID is handled in the sqlite DB
+On Initial run of the bridge you will be asked to provide the Discord Bot token,
+you can get this at https://discordapp.com/developers/applications/ and setting
+up a new Application.
+
+You will also need a default global id for non mapped users to send from,
+create an account, create a character, and login to create the entry in the
+cohchat db, browse dbo.users, and find the 'user_id' for your user
+
+The httpd port you select will be how you administer your server, you can also send
+get requests to the endpoints directly to automate adding users.
+
+Finally you will be asked to provide an httpsecret, this is like the password to the panel,
+it is required for *all* actions on the panel this is to stop someone from finding your server
+and adding/deleting data.
