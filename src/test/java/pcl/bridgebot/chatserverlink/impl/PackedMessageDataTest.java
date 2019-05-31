@@ -28,7 +28,7 @@ public class PackedMessageDataTest {
 
     @Test
     public void itShouldWrapAndUnwrapAnUTFMessageProperly() throws InvalidPackedMessageException {
-        PackedMessageData originalData = new PackedMessageData("√chat", 0x10, "∀a∈B", "∑a");
+        PackedMessageData originalData = new PackedMessageData("\u221achat", 0x10, "\u2200a\u2208B", "\u2211a");
         byte[] packedMessage = originalData.getPackedMessage();
         PackedMessageData unpackedData = PackedMessageData.getDataFromPackedMessage(packedMessage,
                 packedMessage.length);

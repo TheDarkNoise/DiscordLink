@@ -47,11 +47,11 @@ public class UTF8MessageSplitterTest {
     public void itShouldSplitAnUtf8StringProperly() throws InvalidPackedMessageException {
         UTF8MessageSplitter splitter = new UTF8MessageSplitter(20);
 
-        Iterator<String> result = splitter.splitMessage("Large a√√√√√√√√√√√√√√√√ chars").iterator();
+        Iterator<String> result = splitter.splitMessage("Large a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a chars").iterator();
         assertEquals("Large", result.next());
-        assertEquals("a√√√√√√", result.next());
-        assertEquals("√√√√√√", result.next());
-        assertEquals("√√√√ chars", result.next());
+        assertEquals("a\u221a\u221a\u221a\u221a\u221a\u221a", result.next());
+        assertEquals("\u221a\u221a\u221a\u221a\u221a\u221a", result.next());
+        assertEquals("\u221a\u221a\u221a\u221a chars", result.next());
         assertFalse(result.hasNext());
     }
 
@@ -74,11 +74,11 @@ public class UTF8MessageSplitterTest {
         UTF8MessageSplitter splitter = new UTF8MessageSplitter(255);
 
         Iterator<String> result = splitter.splitMessage(
-                "a√√√√√√√√√√√√√√√√a√√√√√√√√√√√√√√√√a√√√√√√√√√√√√√√√√a√√√√√√√√√√√√√√√√a√√√√√√√√√√√√√√√√a√√√√√√√√√√√√√√√√")
+                "a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221aa\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221aa\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221aa\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221aa\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221aa\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a")
                 .iterator();
-        assertEquals("a√√√√√√√√√√√√√√√√a√√√√√√√√√√√√√√√√a√√√√√√√√√√√√√√√√a√√√√√√√√√√√√√√√√a√√√√√√√√√√√√√√√√a√√√",
+        assertEquals("a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221aa\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221aa\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221aa\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221aa\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221aa\u221a\u221a\u221a",
                 result.next());
-        assertEquals("√√√√√√√√√√√√√", result.next());
+        assertEquals("\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a\u221a", result.next());
         assertFalse(result.hasNext());
     }
 }
