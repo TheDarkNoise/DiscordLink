@@ -36,6 +36,7 @@ public class httpd {
 			System.out.println("Starting HTTPD On port " + DiscordLink.httpdPort);
 			server.setExecutor(null); // creates a default executor
 	        server.start();
+			System.out.println("Please visit http://127.0.0.1:" + DiscordLink.httpdPort + " To configure the bridge");
 		} else {
 			System.out.println("httpd server was null!");
 		}
