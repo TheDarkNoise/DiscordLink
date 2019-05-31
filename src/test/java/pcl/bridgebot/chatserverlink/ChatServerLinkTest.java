@@ -8,6 +8,25 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class ChatServerLinkTest {
+    // public static void main(String[] args) {
+    //     ChatServerLink csLink = new ChatServerLink("192.168.1.16", 31415);
+
+	// 	Runnable test = new Runnable() {
+	// 		@Override
+	// 		public void run() {
+	// 			try {
+	// 				csLink.startLoop(t -> {
+	// 					System.out.println(String.format("<%s> %s", t.getUserNickname(), t.getMessage()));
+	// 				});
+	// 			} catch (ServerAlreadyRunningException e) {
+	// 				// NO OP, should never happen
+	// 			}
+    //         }
+    //     };
+	// 	Thread thread = new Thread(test);
+	// 	thread.start();
+    // }
+
     @Test
     public void itSHouldInitializeTheChatServerLinkProperly() {
         new ChatServerLink("", 0);

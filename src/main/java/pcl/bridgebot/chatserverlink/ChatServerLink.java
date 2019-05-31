@@ -1,9 +1,10 @@
 package pcl.bridgebot.chatserverlink;
 
-import java.io.DataOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -103,15 +104,24 @@ public class ChatServerLink {
 
 				// Read from the "in" socket until we get a message
 				// This will be interrupted if there's a socket close event
-				int dataRead = inFromServer.read(buffer);
-				if (dataRead > 0) {
-					try {
-						// Read & accept the message
-						IPackedMessageData result = packedMessageFactory.getPackedMessageData(buffer, dataRead);
-						onMessageReceived.accept(result);
-					} catch (Exception e) {
-						// NO OP (server was closed)
-						System.out.println("Issue while receiving packet : " + e);
+				int dataRead = inFromServer.read(buffer, 0, 2);
+				if (dataRead != 4) {
+					// Manually read a LE short from the stream
+					short packetSize = (short)((((short)(buffer[1])) << 8) + ((short) (buffer[0])));
+					if(packetSize > 1000) {
+						System.out.println(String.format("Announced size was 0x%02X bytes, longer than the buffer. Skipping packet", packetSize));
+						continue;
+					}
+					dataRead = inFromServer.read(buffer, 2, packetSize - 2);
+					if (dataRead > 0) {
+						try {
+							// Read & accept the message
+							IPackedMessageData result = packedMessageFactory.getPackedMessageData(buffer, packetSize);
+							onMessageReceived.accept(result);
+						} catch (Exception e) {
+							// NO OP (server was closed)
+							System.out.println("Issue while receiving packet : " + e);
+						}
 					}
 				}
 			}
