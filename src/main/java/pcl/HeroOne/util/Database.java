@@ -117,7 +117,6 @@ public class Database {
 	}
 
 	public static void updateDatabase() {
-		int counter = 0;
 		int currentVer = getDBVer();
 		//IRCBot.log.info("Updating database! Current version: " + currentVer);
 		for (UpdateQuery query : updateQueries) {
@@ -125,7 +124,6 @@ public class Database {
 				try {
 					Database.getConnection().createStatement().executeUpdate(query.getUpdateQuery());
 					setDBVer(query.getMinVersion());
-					counter++;
 				} catch (SQLException e) {
 					e.printStackTrace();
 				}

@@ -23,30 +23,13 @@ import pcl.bridgebot.httphandler.UserListHandler;
 
 import javax.security.auth.login.LoginException;
 
-import org.apache.commons.codec.Charsets;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
-
 import java.util.List;
-import java.util.Map;
 import java.util.Scanner;
-import java.util.function.Consumer;
 import java.util.regex.Pattern;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.nio.charset.StandardCharsets;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-
-import com.google.common.base.Splitter;
-import com.google.common.io.CharStreams;
-import com.sun.net.httpserver.HttpExchange;
-import com.sun.net.httpserver.HttpHandler;
 
 public class DiscordLink extends ListenerAdapter {
 	static ChatServerLink link = null;
@@ -267,20 +250,17 @@ public class DiscordLink extends ListenerAdapter {
 	public void onMessageReceived(MessageReceivedEvent event) {
 		// These are provided with every event in JDA
 		jda = event.getJDA(); // JDA, the core of the api.
-		long responseNumber = event.getResponseNumber();// The amount of discord events that JDA has received since the
-		// last reconnect.
+		event.getResponseNumber();
 
 		// Event specific information
 		User author = event.getAuthor(); // The user that sent the message
 		Message message = event.getMessage(); // The message that was received.
-		MessageChannel channel = event.getChannel(); // This is the MessageChannel that the message was sent to.
-		// This could be a TextChannel, PrivateChannel, or Group!
+		event.getChannel();
 
 		String msg = message.getContentDisplay(); // This returns a human readable version of the Message. Similar to
 		// what you would see in the client.
 
-		boolean bot = author.isBot(); // This boolean is useful to determine if the User that
-		// sent the Message is a BOT or not!
+		author.isBot();
 
 		if (event.isFromType(ChannelType.TEXT)) // If this message was sent to a Guild TextChannel
 		{
@@ -290,9 +270,8 @@ public class DiscordLink extends ListenerAdapter {
 			// might return null due
 			// the message possibly not being from a Guild!
 
-			Guild guild = event.getGuild(); // The Guild that this message was sent in. (note, in the API, Guilds are
-			// Servers)
-			TextChannel textChannel = event.getTextChannel(); // The TextChannel that this message was sent to.
+			event.getGuild();
+			event.getTextChannel();
 			Member member = event.getMember(); // This Member that sent the message. Contains Guild specific information
 			// about the User!
 
@@ -377,7 +356,6 @@ public class DiscordLink extends ListenerAdapter {
 									WebhookClient client = builder.build();
 									WebhookMessageBuilder builder1 = new WebhookMessageBuilder();
 
-									String id = null;
 									PreparedStatement getUserByGlobal = null;
 									try {
 										getUserByGlobal = Database.getPreparedStatement("getUserByGlobal");

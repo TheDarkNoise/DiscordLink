@@ -8,15 +8,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.codec.Charsets;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
-
-import com.google.common.base.Splitter;
 import com.google.common.io.CharStreams;
 import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
@@ -27,6 +19,7 @@ import pcl.bridgebot.DiscordLink;
 public class ChannelListHandler implements HttpHandler {
 	
 	static String html;
+	@SuppressWarnings("deprecation")
 	public ChannelListHandler() throws IOException {
 		InputStream htmlIn = getClass().getResourceAsStream("/html/discord.html");
 		html = CharStreams.toString(new InputStreamReader(htmlIn, Charsets.UTF_8));

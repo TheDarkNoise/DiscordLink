@@ -21,6 +21,7 @@ import pcl.bridgebot.DiscordLink;
 public class UserListHandler implements HttpHandler {
 	
 	static String html;
+	@SuppressWarnings("deprecation")
 	public UserListHandler() throws IOException {
 		InputStream htmlIn = getClass().getResourceAsStream("/html/discord.html");
 		html = CharStreams.toString(new InputStreamReader(htmlIn, Charsets.UTF_8));
