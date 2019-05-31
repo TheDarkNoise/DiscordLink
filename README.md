@@ -6,25 +6,6 @@ This bot relays messages from a simple and propietary format to a Discord Guild.
 The protocol is of little interest for the general population, but the bot is
 being open sourced for educational purposes.
 
-Protocol Details
-================
-
-The server listens for connections on TCP Socket port 31415. Once established,
-the message stream begins immediately; there's no handshake or authentication.
-
-    __int16  Packet size.
-    __int8   Message type; 0x64 is "Send to Channel".
-    __int32  User ID.
-    __int8   Size of chat room name.
-    char*    Chat room name.
-    __int8   Size of the message.
-    char*    Message.
-    __int8   Size of the user nickname.
-    char*    Nickname
-
-The user nickname is always sent by the server, but ignored when the server
-receives a mesage; it retrieves the nickname from its internal user table.
-
 Setup
 =========
 
@@ -44,3 +25,23 @@ it is required for *all* actions on the panel this is to stop someone from findi
 and adding/deleting data.
 
 You can also add a "WebHook" to the discord channel to make chat look nicer.  Add the "WebHook" and name it "GlobalChat" the bridge will look for that webhook to send messages, with this feature it will show as GlobalName [BOT] Message.
+
+
+Protocol Details
+================
+
+The server listens for connections on TCP Socket port 31415. Once established,
+the message stream begins immediately; there's no handshake or authentication.
+
+    __int16  Packet size.
+    __int8   Message type; 0x64 is "Send to Channel".
+    __int32  User ID.
+    __int8   Size of chat room name.
+    char*    Chat room name.
+    __int8   Size of the message.
+    char*    Message.
+    __int8   Size of the user nickname.
+    char*    Nickname
+
+The user nickname is always sent by the server, but ignored when the server
+receives a mesage; it retrieves the nickname from its internal user table.
