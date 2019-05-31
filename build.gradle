@@ -28,13 +28,15 @@ jar {
 dependencies {
     // This dependency is exported to consumers, that is to say found on their compile classpath.
     compile 'org.apache.commons:commons-math3:3.6.1'
+    compile group: 'commons-codec', name: 'commons-codec', version: '1.12'
+	compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.5.8'
 
     // This dependency is used internally, and not exposed to consumers on their own compile classpath.
     compile 'com.google.guava:guava:23.0'
 
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
-    compile group: 'com.microsoft.sqlserver', name: 'mssql-jdbc', version: '6.1.0.jre8'
+    compile group: 'org.apache.httpcomponents', name: 'httpcore-nio', version: '4.4.11'
     compile 'org.xerial:sqlite-jdbc:3.23.1'
     compile ('net.dv8tion:JDA:3.8.3_462') {
         exclude module: 'opus-java'
