@@ -42,3 +42,5 @@ get requests to the endpoints directly to automate adding users.
 Finally you will be asked to provide an httpsecret, this is like the password to the panel,
 it is required for *all* actions on the panel this is to stop someone from finding your server
 and adding/deleting data.
+
+You can also add a "WebHook" to the discord channel to make chat look nicer.  Add the "WebHook" and name it "GlobalChat" the bridge will look for that webhook to send messages, with this feature it will show as GlobalName [BOT] Message.
