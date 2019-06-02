@@ -31,16 +31,14 @@ public class IndexHandler implements HttpHandler {
 	public IndexHandler() throws IOException {
 		InputStream htmlIn = getClass().getResourceAsStream("/html/discord.html");
 		html = CharStreams.toString(new InputStreamReader(htmlIn, Charsets.UTF_8));
+	    navData = "<div class=\"innertube\"><h1><a href=\"channels\">Channels</a></h1></div>";
+	    navData += "<div class=\"innertube\"><h1><a href=\"users\">Users</a></h1></div>";
 	}
 	
 	@Override
 	public void handle(HttpExchange t) throws IOException {
 		String target = t.getRequestURI().toString();
 		String response = "";
-		
-	    navData = "<div class=\"innertube\"><h1><a href=\"channels\">Channels</a></h1></div>";
-	    navData += "<div class=\"innertube\"><h1><a href=\"users\">Users</a></h1></div>";
-
 		PreparedStatement addChannel = null;
 		PreparedStatement delChannel = null;
 		PreparedStatement addUser = null;
