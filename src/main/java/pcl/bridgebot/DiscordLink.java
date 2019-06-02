@@ -37,6 +37,7 @@ public class DiscordLink extends ListenerAdapter {
 	public static JDA jda;
 	public static httpd httpServer = new httpd();
 	public static String httpdSecret = null;
+	public static String defaultGID = null;
 
 	private static boolean initDatabase() throws SQLException {
 		Database.init();
@@ -174,6 +175,12 @@ public class DiscordLink extends ListenerAdapter {
 			if (res4.next()) {
 				httpdSecret = res4.getString(1);
 			}
+			
+			getSettings.setString(1, "defaultGID");
+			ResultSet res5 = getSettings.executeQuery();
+			if (res5.next()) {
+				defaultGID = res5.getString(1);
+			}
 		} catch (Exception e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
@@ -307,9 +314,9 @@ public class DiscordLink extends ListenerAdapter {
 				ResultSet results2 = getUserByDiscordID.executeQuery();
 				if (results.next()) {
 					if (results2.next()) {
-						link.sendMessage(results.getString(1), Integer.valueOf(results2.getString(1)), "TestUser", msg);
+						link.sendMessage(results.getString(1), Integer.valueOf(results2.getString(1)), "DiscordLink", msg);
 					} else {
-						link.sendMessage(results.getString(1), 128, "TestUser", name + ": " + msg);
+						link.sendMessage(results.getString(1), Integer.valueOf(defaultGID), "TestUser", name + ": " + msg);
 					}
 				}
 			} catch (Exception e) {
@@ -354,10 +361,7 @@ public class DiscordLink extends ListenerAdapter {
 							//Loop all webhooks looking for "GlobalChat"
 							for (Webhook hook : webhook) {
 								if (hook.getName().equalsIgnoreCase("GlobalChat")) {
-									WebhookClientBuilder builder = hook.newClient(); // Get the first webhook..
-									// I can't think of a
-									// better way to do this
-									// ATM.
+									WebhookClientBuilder builder = hook.newClient();
 									WebhookClient client = builder.build();
 									WebhookMessageBuilder builder1 = new WebhookMessageBuilder();
 

@@ -38,7 +38,7 @@ public class IndexHandler implements HttpHandler {
 		String target = t.getRequestURI().toString();
 		String response = "";
 		
-	    navData += "<div class=\"innertube\"><h1><a href=\"channels\">Channels</a></h1></div>";
+	    navData = "<div class=\"innertube\"><h1><a href=\"channels\">Channels</a></h1></div>";
 	    navData += "<div class=\"innertube\"><h1><a href=\"users\">Users</a></h1></div>";
 
 		PreparedStatement addChannel = null;
