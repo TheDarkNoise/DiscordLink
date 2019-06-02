@@ -107,7 +107,7 @@ public class ChatServerLink {
 				int dataRead = inFromServer.read(buffer, 0, 2);
 				if (dataRead != 4) {
 					// Manually read a LE short from the stream
-					int packetSize = (int)((((int)(buffer[1])) << 8) + ((int) (buffer[0])));
+					int packetSize = ((buffer[1] & 0xff) << 8) + (buffer[0] & 0xff);
 					if(packetSize > 1000) {
 						System.out.println(String.format("Announced size was 0x%02X bytes, longer than the buffer. Skipping packet", packetSize));
 						continue;

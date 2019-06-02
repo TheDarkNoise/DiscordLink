@@ -166,7 +166,7 @@ public class PackedMessageData implements IPackedMessageData {
         if (buffer.remaining() < 1)
             throw new InvalidPackedMessageException(String.format("No header for string %s", stringName),
                     buffer.position());
-        int stringLength = (int) (buffer.get() & ((int) 0xff));
+        int stringLength = buffer.get() & 0xff;
         if (stringLength < 0)
             throw new InvalidPackedMessageException(
                     String.format("String %s has a negative advertized size", stringName), buffer.position());
