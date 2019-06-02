@@ -304,6 +304,7 @@ public class DiscordLink extends ListenerAdapter {
 				return;
 			PreparedStatement getChannelByDiscordID;
 			PreparedStatement getUserByDiscordID;
+			PreparedStatement getChannelByGlobal;
 			try {
 				getChannelByDiscordID = Database.getPreparedStatement("getChannelByDiscordID");
 				getChannelByDiscordID.setString(1, event.getTextChannel().getId());
@@ -312,11 +313,22 @@ public class DiscordLink extends ListenerAdapter {
 				getUserByDiscordID = Database.getPreparedStatement("getUserByDiscordID");
 				getUserByDiscordID.setString(1, event.getAuthor().getId());
 				ResultSet results2 = getUserByDiscordID.executeQuery();
-				if (results.next()) {
+				while (results.next()) {
+					msg = msg.replace("@everyone", "@" + "\u00a0" + "everyone").replace("@here", "@" + "\u00a0" + "here");
 					if (results2.next()) {
 						link.sendMessage(results.getString(1), Integer.valueOf(results2.getString(1)), "DiscordLink", msg);
 					} else {
-						link.sendMessage(results.getString(1), Integer.valueOf(defaultGID), "TestUser", name + ": " + msg);
+						link.sendMessage(results.getString(1), Integer.valueOf(defaultGID), "DiscordLink", name + ": " + msg);
+					}
+					System.out.println( results.getString(1));
+					getChannelByGlobal = Database.getPreparedStatement("getChannelByGlobal");
+					getChannelByGlobal.setString(1, results.getString(1));
+					ResultSet results3 = getChannelByGlobal.executeQuery();
+					while (results3.next()) {
+						if (!event.getChannel().getId().equals(results3.getString(2))) {
+							TextChannel channel = DiscordLink.jda.getTextChannelById(results3.getString(2));
+							channel.sendMessage(name + ": " + msg).queue();
+						}
 					}
 				}
 			} catch (Exception e) {
@@ -356,7 +368,18 @@ public class DiscordLink extends ListenerAdapter {
 							List<Webhook> webhook = channel.getWebhooks().complete(); // some webhook instance
 
 							if (webhook.size() == 0) {
-								channel.sendMessage(inMsg.getUserNickname() + ": " + inMsg.getMessage()).queue();
+								String message = inMsg.getMessage();
+								List<Member> members = channel.getMembers();
+								for (Member m : members) {
+									if (message.toLowerCase().contains("@"+m.getEffectiveName().toLowerCase())) {
+										message = message.replace("@"+m.getEffectiveName(), m.getAsMention());
+									}
+									if (message.toLowerCase().contains("@"+m.getUser().getName().toLowerCase())) {
+										message = message.replace("@"+m.getUser().getName(), m.getAsMention());
+									}
+								}
+								message = message.replace("@everyone", "@" + "\u00a0" + "everyone").replace("@here", "@" + "\u00a0" + "here");
+								channel.sendMessage(inMsg.getUserNickname() + ": " + message).queue();
 								continue;
 							}
 							//Loop all webhooks looking for "GlobalChat"
@@ -383,8 +406,20 @@ public class DiscordLink extends ListenerAdapter {
 									}
 									String nick = inMsg.getUserNickname();
 
-
-									builder1.setContent(inMsg.getMessage()
+									String message = inMsg.getMessage();
+									List<Member> members = channel.getMembers();
+									
+									for (Member m : members) {
+										if (message.toLowerCase().contains("@"+m.getEffectiveName().toLowerCase())) {
+											message = message.replace("@"+m.getEffectiveName(), m.getAsMention());
+										}
+										if (message.toLowerCase().contains("@"+m.getUser().getName().toLowerCase())) {
+											message = message.replace("@"+m.getUser().getName(), m.getAsMention());
+										}
+										
+									}
+									message = message.replace("@everyone", "@" + "\u00a0" + "everyone").replace("@here", "@" + "\u00a0" + "here");
+									builder1.setContent(message
 											.replaceFirst(Pattern.quote("<" + inMsg.getUserNickname() + ">"), ""));
 									builder1.setUsername(nick);
 									WebhookMessage message1 = builder1.build();
