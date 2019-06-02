@@ -23,6 +23,8 @@ import pcl.bridgebot.httphandler.UserListHandler;
 
 import javax.security.auth.login.LoginException;
 
+import emoji4j.EmojiUtils;
+
 import java.util.List;
 import java.util.Scanner;
 import java.util.regex.Pattern;
@@ -315,12 +317,12 @@ public class DiscordLink extends ListenerAdapter {
 				ResultSet results2 = getUserByDiscordID.executeQuery();
 				while (results.next()) {
 					msg = msg.replace("@everyone", "@" + "\u00a0" + "everyone").replace("@here", "@" + "\u00a0" + "here");
+					msg = EmojiUtils.shortCodify(msg);
 					if (results2.next()) {
 						link.sendMessage(results.getString(1), Integer.valueOf(results2.getString(1)), "DiscordLink", msg);
 					} else {
 						link.sendMessage(results.getString(1), Integer.valueOf(defaultGID), "DiscordLink", name + ": " + msg);
 					}
-					System.out.println( results.getString(1));
 					getChannelByGlobal = Database.getPreparedStatement("getChannelByGlobal");
 					getChannelByGlobal.setString(1, results.getString(1));
 					ResultSet results3 = getChannelByGlobal.executeQuery();
