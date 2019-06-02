@@ -48,7 +48,7 @@ public class ChannelListHandler implements HttpHandler {
 			ResultSet results = getAllChannels.executeQuery();
 			while (results.next()) {
 				channelList = channelList + "<tr><td>"+results.getString(1)+"</td><td>"+ DiscordLink.jda.getTextChannelById(results.getString(2)).getName() +"/" + results.getString(2) +"</td><td><a href=\"#\"" + 
-						"    title=\"delete\" onclick=\"this.href='/?secret=' + document.getElementById('secret').value + '&action=delChan&gname=" + results.getString(1) + "'\">[Delete]</a></td></tr>";
+						"    title=\"delete\" onclick=\"this.href='/?secret=' + document.getElementById('secret').value + '&action=delChan&discordid=" + results.getString(2) + "'\">[Delete]</a></td></tr>";
 			}
 		} catch (Exception e) {
 			System.out.println(e);

@@ -41,7 +41,7 @@ public class DiscordLink extends ListenerAdapter {
 
 	private static boolean initDatabase() throws SQLException {
 		Database.init();
-		Database.addStatement("CREATE TABLE IF NOT EXISTS Channels(globalName PRIMARY KEY, discordID)");
+		Database.addStatement("CREATE TABLE IF NOT EXISTS Channels(globalName, discordID PRIMARY KEY)");
 		Database.addStatement("CREATE TABLE IF NOT EXISTS UserMap(globalID PRIMARY KEY, discordID)");
 		Database.addStatement("CREATE TABLE IF NOT EXISTS Config(key PRIMARY KEY, data)");
 		Database.addStatement(
@@ -49,7 +49,7 @@ public class DiscordLink extends ListenerAdapter {
 
 		// Channels
 		Database.addPreparedStatement("addChannel", "REPLACE INTO Channels (globalName, discordID) VALUES (?,?);");
-		Database.addPreparedStatement("removeChannel", "DELETE FROM Channels WHERE globalName = ?;");
+		Database.addPreparedStatement("removeChannel", "DELETE FROM Channels WHERE discordID = ?;");
 		Database.addPreparedStatement("getChannelByGlobal", "SELECT * FROM Channels WHERE globalName = ?;");
 		Database.addPreparedStatement("getChannelByDiscordID", "SELECT * FROM Channels WHERE discordID = ?;");
 		Database.addPreparedStatement("getAllChannels", "SELECT * FROM Channels;");
@@ -348,7 +348,7 @@ public class DiscordLink extends ListenerAdapter {
 					getChannelByGlobal = Database.getPreparedStatement("getChannelByGlobal");
 					getChannelByGlobal.setString(1, inMsg.getChatroom());
 					ResultSet results = getChannelByGlobal.executeQuery();
-					if (results.next()) {
+					while (results.next()) {
 						//Get the Discord TextChannel instance by the ID
 						TextChannel channel = DiscordLink.jda.getTextChannelById(results.getString(2));
 						try {
@@ -357,6 +357,7 @@ public class DiscordLink extends ListenerAdapter {
 
 							if (webhook.size() == 0) {
 								channel.sendMessage(inMsg.getUserNickname() + ": " + inMsg.getMessage()).queue();
+								continue;
 							}
 							//Loop all webhooks looking for "GlobalChat"
 							for (Webhook hook : webhook) {
@@ -389,10 +390,9 @@ public class DiscordLink extends ListenerAdapter {
 									WebhookMessage message1 = builder1.build();
 									client.send(message1);
 									client.close();
-									return;
+									continue;
 								}
 							}
-							channel.sendMessage(inMsg.getUserNickname() + ": " + inMsg.getMessage()).queue();
 						} catch (Exception e1) {
 							System.out.println(e1);
 						}

@@ -74,7 +74,7 @@ public class IndexHandler implements HttpHandler {
 					}
 				} else if (map.get("action").equals("delChan")) {
 					try {
-						delChannel.setString(1, map.get("gname"));
+						delChannel.setString(1, map.get("discordid"));
 						delChannel.execute();
 						bodyText ="<meta http-equiv=\"refresh\" content=\"0; url=./channels\" />";
 					} catch (SQLException e) {
@@ -101,7 +101,9 @@ public class IndexHandler implements HttpHandler {
 						e.printStackTrace();
 					}
 				}
-			}	
+			} else {
+				bodyText ="The Secret was incorrect or missing!";
+			}
 		}
 		
 		
