@@ -355,6 +355,21 @@ public class DiscordLink extends ListenerAdapter {
 				}
 			}
 
+			private void sendMessage(IPackedMessageData inMsg, TextChannel channel) {
+				String message = inMsg.getMessage();
+				List<Member> members = channel.getMembers();
+				for (Member m : members) {
+					if (message.toLowerCase().contains("@"+m.getEffectiveName().toLowerCase())) {
+						message = message.replace("@"+m.getEffectiveName(), m.getAsMention());
+					}
+					if (message.toLowerCase().contains("@"+m.getUser().getName().toLowerCase())) {
+						message = message.replace("@"+m.getUser().getName(), m.getAsMention());
+					}
+				}
+				message = message.replace("@everyone", "@" + "\u00a0" + "everyone").replace("@here", "@" + "\u00a0" + "here");
+				channel.sendMessage(inMsg.getUserNickname() + ": " + message).queue();
+			}
+			
 			private void handlePackedMessage(IPackedMessageData inMsg) {
 				PreparedStatement getChannelByGlobal;
 				try {
@@ -370,18 +385,7 @@ public class DiscordLink extends ListenerAdapter {
 							List<Webhook> webhook = channel.getWebhooks().complete(); // some webhook instance
 
 							if (webhook.size() == 0) {
-								String message = inMsg.getMessage();
-								List<Member> members = channel.getMembers();
-								for (Member m : members) {
-									if (message.toLowerCase().contains("@"+m.getEffectiveName().toLowerCase())) {
-										message = message.replace("@"+m.getEffectiveName(), m.getAsMention());
-									}
-									if (message.toLowerCase().contains("@"+m.getUser().getName().toLowerCase())) {
-										message = message.replace("@"+m.getUser().getName(), m.getAsMention());
-									}
-								}
-								message = message.replace("@everyone", "@" + "\u00a0" + "everyone").replace("@here", "@" + "\u00a0" + "here");
-								channel.sendMessage(inMsg.getUserNickname() + ": " + message).queue();
+								sendMessage(inMsg, channel);
 								continue;
 							}
 							//Loop all webhooks looking for "GlobalChat"
@@ -429,6 +433,7 @@ public class DiscordLink extends ListenerAdapter {
 									client.close();
 									continue;
 								}
+								sendMessage(inMsg, channel);
 							}
 						} catch (Exception e1) {
 							System.out.println(e1);
