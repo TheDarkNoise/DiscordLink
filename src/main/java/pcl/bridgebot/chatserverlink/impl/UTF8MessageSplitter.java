@@ -32,7 +32,7 @@ public class UTF8MessageSplitter implements IUTF8MessageSplitter {
                 // and send that.
                 // Store the previous chunk as "pending message"
                 // Special case for the very first chunk.
-                if(!aggregatedMessage.equals("")) {
+                if (!aggregatedMessage.equals("")) {
                     pendingMessageList.add(aggregatedMessage);
                     aggregatedMessage = "";
                 }
@@ -65,7 +65,7 @@ public class UTF8MessageSplitter implements IUTF8MessageSplitter {
                 continue;
             }
             // Special case for the very first chunk.
-            if(aggregatedMessage.equals("")) {
+            if (aggregatedMessage.equals("")) {
                 aggregatedMessage = chunk;
                 continue;
             }

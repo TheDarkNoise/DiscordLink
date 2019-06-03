@@ -1,4 +1,4 @@
-package pcl.HeroOne.util;
+package pcl.bridgebot.util;
 
 public class Version implements Comparable<Version>
 {

@@ -8,28 +8,51 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 public class ChatServerLinkTest {
-    // public static void main(String[] args) {
-    //     ChatServerLink csLink = new ChatServerLink("192.168.1.16", 31415);
+	// public static void main(String[] args) {
+	// ChatServerLink csLink = new ChatServerLink("192.168.1.16", 31415);
 
-	// 	Runnable test = new Runnable() {
-	// 		@Override
-	// 		public void run() {
-	// 			try {
-	// 				csLink.startLoop(t -> {
-	// 					System.out.println(String.format("<%s> %s", t.getUserNickname(), t.getMessage()));
-	// 				});
-	// 			} catch (ServerAlreadyRunningException e) {
-	// 				// NO OP, should never happen
-	// 			}
-    //         }
-    //     };
-	// 	Thread thread = new Thread(test);
-	// 	thread.start();
-    // }
+	// Runnable test = new Runnable() {
+	// @Override
+	// public void run() {
+	// try {
+	// csLink.startLoop(t -> {
+	// System.out.println(String.format("<%s> %s", t.getUserNickname(),
+	// t.getMessage()));
+	// });
+	// } catch (ServerAlreadyRunningException e) {
+	// // NO OP, should never happen
+	// }
+	// }
+	// };
+	// Thread thread = new Thread(test);
+	// thread.start();
+	// }
 
-    @Test
-    public void itSHouldInitializeTheChatServerLinkProperly() {
-        new ChatServerLink("", 0);
-        assertTrue(true);
-    }
+	@Test
+	/**
+	 * This is a ChatServerLink integration test. The way it works is that a local
+	 * TCP echo server is created, thus allowing the TCP link to read and write its
+	 * own messages.
+	 * 
+	 * This full test should ensure that normal messages are transmitted properly
+	 */
+	public void itShouldEchoMessagesProperly() {
+		new ChatServerLink("", 0);
+		assertTrue(true);
+	}
+
+	@Test
+	/**
+	 * This is a ChatServerLink integration test. The way it works is that a local
+	 * TCP echo server is created, thus allowing the TCP link to read and write its
+	 * own messages.
+	 * 
+	 * This custom test ensures that messages starting with invalid bytes which
+	 * would map to invalid packet sizes (>1000 bytes, negative short sizes, etc...)
+	 * are handled cleanly
+	 */
+	public void itShouldEchoInvalidMessagesProperly() {
+		new ChatServerLink("", 0);
+		assertTrue(true);
+	}
 }

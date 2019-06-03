@@ -1,78 +1,29 @@
-/**
- * 
- */
 package pcl.bridgebot;
 
-import net.dv8tion.jda.core.JDA;
-import net.dv8tion.jda.core.JDABuilder;
-import net.dv8tion.jda.core.entities.*;
-import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.core.hooks.ListenerAdapter;
-import net.dv8tion.jda.webhook.WebhookClient;
-import net.dv8tion.jda.webhook.WebhookClientBuilder;
-import net.dv8tion.jda.webhook.WebhookMessage;
-import net.dv8tion.jda.webhook.WebhookMessageBuilder;
-import pcl.HeroOne.util.Database;
-import pcl.HeroOne.util.httpd;
-import pcl.bridgebot.chatserverlink.ChatServerLink;
-import pcl.bridgebot.chatserverlink.IPackedMessageData;
-import pcl.bridgebot.chatserverlink.ServerAlreadyRunningException;
-import pcl.bridgebot.httphandler.ChannelListHandler;
-import pcl.bridgebot.httphandler.IndexHandler;
-import pcl.bridgebot.httphandler.UserListHandler;
+import java.sql.SQLException;
+import java.util.HashSet;
+import java.util.Optional;
+import java.util.Scanner;
 
 import javax.security.auth.login.LoginException;
 
 import emoji4j.EmojiUtils;
+import pcl.bridgebot.chatserverlink.ChatServerLink;
+import pcl.bridgebot.chatserverlink.IPackedMessageData;
+import pcl.bridgebot.chatserverlink.ServerAlreadyRunningException;
+import pcl.bridgebot.database.BaseSettings;
+import pcl.bridgebot.database.DatabaseHandler;
+import pcl.bridgebot.discordserverlink.DiscordServerLink;
+import pcl.bridgebot.discordserverlink.IDiscordMessageData;
+import pcl.bridgebot.webserver.HTTPd;
 
-import java.util.List;
-import java.util.Scanner;
-import java.util.regex.Pattern;
-import java.io.IOException;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+public class DiscordLink {
 
-public class DiscordLink extends ListenerAdapter {
-	static ChatServerLink link = null;
-	public static Integer httpdPort = null;
-	public static JDA jda;
-	public static httpd httpServer = new httpd();
-	public static String httpdSecret = null;
-	public static String defaultGID = null;
+	private final ChatServerLink link;
+	private final DiscordServerLink discordServerLink;
+	private final DatabaseHandler databaseHandler;
 
-	private static boolean initDatabase() throws SQLException {
-		Database.init();
-		Database.addStatement("CREATE TABLE IF NOT EXISTS Channels(globalName, discordID PRIMARY KEY)");
-		Database.addStatement("CREATE TABLE IF NOT EXISTS UserMap(globalID PRIMARY KEY, discordID)");
-		Database.addStatement("CREATE TABLE IF NOT EXISTS Config(key PRIMARY KEY, data)");
-		Database.addStatement(
-				"CREATE TABLE IF NOT EXISTS JsonData (mykey VARCHAR(255) PRIMARY KEY NOT NULL, store TEXT DEFAULT NULL);");
-
-		// Channels
-		Database.addPreparedStatement("addChannel", "REPLACE INTO Channels (globalName, discordID) VALUES (?,?);");
-		Database.addPreparedStatement("removeChannel", "DELETE FROM Channels WHERE discordID = ?;");
-		Database.addPreparedStatement("getChannelByGlobal", "SELECT * FROM Channels WHERE globalName = ?;");
-		Database.addPreparedStatement("getChannelByDiscordID", "SELECT * FROM Channels WHERE discordID = ?;");
-		Database.addPreparedStatement("getAllChannels", "SELECT * FROM Channels;");
-
-		// UserMap
-		Database.addPreparedStatement("getUserByGlobal", "SELECT discordID FROM UserMap WHERE globalID = ?;");
-		Database.addPreparedStatement("getUserByDiscordID", "SELECT globalID FROM UserMap WHERE discordID = ?;");
-		Database.addPreparedStatement("addUser", "REPLACE INTO UserMap (globalID, discordID) VALUES (?,?);");
-		Database.addPreparedStatement("delUser", "DELETE FROM UserMap WHERE discordID = ?;");
-		Database.addPreparedStatement("getAllUsers", "SELECT globalID, discordID FROM UserMap;");
-
-		// JSONStorage
-		Database.addPreparedStatement("storeJSON", "INSERT OR REPLACE INTO JsonData (mykey, store) VALUES (?, ?);");
-		Database.addPreparedStatement("retreiveJSON", "SELECT store FROM JsonData WHERE mykey = ?");
-
-		// Default config stuff
-		Database.addPreparedStatement("getSettings", "SELECT data FROM Config WHERE key = ? LIMIT 1;");
-
-		Database.addPreparedStatement("setSettings", "REPLACE INTO Config (key, data) VALUES (?,?);");
-		return true;
-	}
+	private final String defaultGID;
 
 	/**
 	 * This is the method where the program starts.
@@ -80,372 +31,180 @@ public class DiscordLink extends ListenerAdapter {
 	 * @throws Exception
 	 */
 	public static void main(String[] args) {
+
 		try {
-			Class.forName("org.sqlite.JDBC");
-		} catch (ClassNotFoundException e) {
-			System.out.println(e.getMessage());
-			return;
-		}
-		try {
-			if (!initDatabase()) {
-				System.out.println("Database Failure!");
-				return;
-			}
-		} catch (SQLException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		PreparedStatement getSettings = null;
-		PreparedStatement setSettings = null;
-
-		String chatserver = null;
-		Integer chatserverport = null;
-		try {
-			//String[] httpdArgs = new String[]{"7080"};
-			//httpdNew.main(httpdArgs);
-			getSettings = Database.getPreparedStatement("getSettings");
-			setSettings = Database.getPreparedStatement("setSettings");
-
-			getSettings.setString(1, "chatserver");
-			ResultSet res1 = getSettings.executeQuery();
-			if (res1.next()) {
-				chatserver = res1.getString(1);
-			} else {
-				// We've got a fresh database, we need to ask some questions.
-				System.out.println("Enter your Discord Bot token: ");
-				Scanner scanner = new Scanner(System.in);
-				String discordToken = scanner.nextLine();
-
-				System.out.println("Enter the default *ID* for global messages to show in game.");
-				System.out.println("(This will be the 'user_id' column in the 'cohchat' DB: ");
-				String defaultGID = scanner.nextLine();
-
-				System.out.println("IPAddress for your chatserver (127.0.0.1?): ");
-				String chatserverIP = scanner.nextLine();
-
-				System.out.println("HTTPd port for external script interfacing: ");
-				String httpdPort = scanner.nextLine();
-
-				System.out.println("HTTPd secret, basically the password sent with all get requests: ");
-				String httpdSecret = scanner.nextLine();
-				try {
-					setSettings.setString(1, "discordToken");
-					setSettings.setString(2, discordToken);
-					setSettings.execute();
-
-					setSettings.setString(1, "defaultGID");
-					setSettings.setString(2, defaultGID);
-					setSettings.execute();
-
-					setSettings.setString(1, "chatserver");
-					setSettings.setString(2, chatserverIP);
-					setSettings.execute();
-
-					setSettings.setString(1, "httpdport");
-					setSettings.setString(2, httpdPort);
-					setSettings.execute();
-
-					setSettings.setString(1, "httpdsecret");
-					setSettings.setString(2, httpdSecret);
-					setSettings.execute();
-					
-					setSettings.setString(1, "chatserverport");
-					setSettings.setString(2, "31415");
-					setSettings.execute();
-				} catch (SQLException e) {
-					// TODO Auto-generated catch block
-					e.printStackTrace();
-				}
-				System.out.println("If you need to modify these settings you can open 'discordlink.sqlite3' in an SQLite editor.");
-				scanner.close();
-			}
-
-			getSettings.setString(1, "chatserverport");
-			ResultSet res2 = getSettings.executeQuery();
-			if (res2.next()) {
-				chatserverport = res2.getInt(1);
-			}
-
-			getSettings.setString(1, "httpdport");
-			ResultSet res3 = getSettings.executeQuery();
-			if (res3.next()) {
-				httpdPort = res3.getInt(1);
-			}
-
-			getSettings.setString(1, "httpdsecret");
-			ResultSet res4 = getSettings.executeQuery();
-			if (res4.next()) {
-				httpdSecret = res4.getString(1);
-			}
-			
-			getSettings.setString(1, "defaultGID");
-			ResultSet res5 = getSettings.executeQuery();
-			if (res5.next()) {
-				defaultGID = res5.getString(1);
-			}
-		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		link = new ChatServerLink(chatserver, chatserverport);
-		try {
-			
-			httpd.setup();
-			httpd.start();
-		} catch (Exception e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		//Register the httpdHandlers for the various control pages
-		try {
-			httpd.registerContext("/", new IndexHandler(), "Discord");
-			httpd.registerContext("/channels", new ChannelListHandler(), "Channels");
-			httpd.registerContext("/users", new UserListHandler(), "Users");
-		} catch (IOException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
-		// We construct a builder for a BOT account. If we wanted to use a CLIENT
-		// account
-		// we would use AccountType.CLIENT
-		try {
-			getSettings.setString(1, "discordToken");
-			ResultSet results = getSettings.executeQuery();
-			if (results.next()) {
-				jda = new JDABuilder(results.getString(1)) // The token of the account that is logging in.
-						.addEventListener(new DiscordLink()) // An instance of a class that will handle events.
-						.build();
-				jda.awaitReady(); // Blocking guarantees that JDA will be completely loaded.
-				System.out.println("Finished Building JDA!");
-			} else {
-				System.out.println("Set Discord Token!");
-			}
-
-		} catch (LoginException e) {
-			// If anything goes wrong in terms of authentication, this is the exception that
+			new DiscordLink();
+		} catch (LoginException | InterruptedException e) {
+			// If anything goes wrong with the Discord authentification, this is the
+			// exception that
 			// will represent it
 			e.printStackTrace();
-		} catch (InterruptedException e) {
-			// Due to the fact that awaitReady is a blocking method, one which waits until
-			// JDA is fully loaded,
-			// the waiting can be interrupted. This is the exception that would fire in that
-			// situation.
-			// As a note: in this extremely simplified example this will never occur. In
-			// fact, this will never occur unless
-			// you use awaitReady in a thread that has the possibility of being interrupted
-			// (async thread usage and interrupts)
+			System.out.println("DiscordLink initialization Failure!");
+			return;
+		} catch (SQLException e) {
 			e.printStackTrace();
-		} catch (Exception e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			System.out.println("Database Failure!");
+			return;
+		} catch (ClassNotFoundException e) {
+			System.out.println(e.getMessage());
+			System.out.println("JDBC Failure!");
+			return;
 		}
-		senderClient();
 	}
 
-	/**
-	 * NOTE THE @Override! This method is actually overriding a method in the
-	 * ListenerAdapter class! We place an @Override annotation right before any
-	 * method that is overriding another to guarantee to ourselves that it is
-	 * actually overriding a method from a super class properly. You should do this
-	 * every time you override a method!
-	 *
-	 * As stated above, this method is overriding a hook method in the
-	 * {@link net.dv8tion.jda.core.hooks.ListenerAdapter ListenerAdapter} class. It
-	 * has convience methods for all JDA events! Consider looking through the events
-	 * it offers if you plan to use the ListenerAdapter.
-	 *
-	 * In this example, when a message is received it is printed to the console.
-	 *
-	 * @param event An event containing information about a
-	 *              {@link net.dv8tion.jda.core.entities.Message Message} that was
-	 *              sent in a channel.
-	 */
-	@Override
-	public void onMessageReceived(MessageReceivedEvent event) {
-		// These are provided with every event in JDA
-		jda = event.getJDA(); // JDA, the core of the api.
-		event.getResponseNumber();
+	public DiscordLink() throws LoginException, InterruptedException, SQLException, ClassNotFoundException {
+		// Initialize JDBC
+		Class.forName("org.sqlite.JDBC");
 
-		// Event specific information
-		User author = event.getAuthor(); // The user that sent the message
-		Message message = event.getMessage(); // The message that was received.
-		event.getChannel();
+		// Initialize the database
+		if (!DatabaseHandler.initialize()) {
+			System.out.println("Database Failure!");
+		}
 
-		String msg = message.getContentDisplay(); // This returns a human readable version of the Message. Similar to
-		// what you would see in the client.
+		databaseHandler = new DatabaseHandler();
 
-		author.isBot();
+		// Get the settings
+		BaseSettings settings = null;
+		try {
+			Optional<BaseSettings> maybeSettings = databaseHandler.getSettings();
+			if (maybeSettings.isPresent()) {
+				settings = maybeSettings.get();
 
-		if (event.isFromType(ChannelType.TEXT)) // If this message was sent to a Guild TextChannel
-		{
-			// Because we now know that this message was sent in a Guild, we can do guild
-			// specific things
-			// Note, if you don't check the ChannelType before using these methods, they
-			// might return null due
-			// the message possibly not being from a Guild!
-
-			event.getGuild();
-			event.getTextChannel();
-			Member member = event.getMember(); // This Member that sent the message. Contains Guild specific information
-			// about the User!
-
-			String name;
-			if (message.isWebhookMessage()) {
-				name = author.getName();
-				return; 
-				// If this is a Webhook message, then there is no Member associated also dump
-				// here we don't wanna see it in game.
-			} // with the User, thus we default to the author for name.
-			else {
-				name = member.getEffectiveName(); // This will either use the Member's nickname if they have one,
-			} // otherwise it will default to their username. (User#getName())
-
-			// System.out.printf("(%s)[%s]<%s>: %s\n", guild.getName(),
-			// textChannel.getName(), name, msg);
-			if (author.equals(jda.getSelfUser()))
-				return;
-			PreparedStatement getChannelByDiscordID;
-			PreparedStatement getUserByDiscordID;
-			PreparedStatement getChannelByGlobal;
-			try {
-				getChannelByDiscordID = Database.getPreparedStatement("getChannelByDiscordID");
-				getChannelByDiscordID.setString(1, event.getTextChannel().getId());
-				ResultSet results = getChannelByDiscordID.executeQuery();
-
-				getUserByDiscordID = Database.getPreparedStatement("getUserByDiscordID");
-				getUserByDiscordID.setString(1, event.getAuthor().getId());
-				ResultSet results2 = getUserByDiscordID.executeQuery();
-				while (results.next()) {
-					msg = msg.replace("@everyone", "@" + "\u00a0" + "everyone").replace("@here", "@" + "\u00a0" + "here");
-					msg = EmojiUtils.shortCodify(msg);
-					if (results2.next()) {
-						link.sendMessage(results.getString(1), Integer.valueOf(results2.getString(1)), "DiscordLink", msg);
-					} else {
-						link.sendMessage(results.getString(1), Integer.valueOf(defaultGID), "DiscordLink", name + ": " + msg);
-					}
-					getChannelByGlobal = Database.getPreparedStatement("getChannelByGlobal");
-					getChannelByGlobal.setString(1, results.getString(1));
-					ResultSet results3 = getChannelByGlobal.executeQuery();
-					while (results3.next()) {
-						if (!event.getChannel().getId().equals(results3.getString(2))) {
-							TextChannel channel = DiscordLink.jda.getTextChannelById(results3.getString(2));
-							channel.sendMessage(name + ": " + msg).queue();
-						}
-					}
-				}
-			} catch (Exception e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+			} else {
+				// If the settings aren't set, request them from the console
+				settings = requestSettingsToUser();
+				databaseHandler.setSettings(settings);
 			}
+		} catch (Exception e1) {
+			e1.printStackTrace();
+			System.out.println("Error while loading or saving settings !");
 		}
-	}
+		defaultGID = settings.getDefaultGID();
 
-	// Game to Discord.
-	private static void senderClient() {
+		// Initialize the ChatServer link
+		System.out.println("Initializing ChatServer connection towards " + settings.getChatserverIP() + ":"
+				+ settings.getChatserverport());
+		link = new ChatServerLink(settings.getChatserverIP(), settings.getChatserverport());
 
-		Runnable test = new Runnable() {
+		// Initialize the DiscordServer link
+		discordServerLink = new DiscordServerLink(settings.getDiscordToken(),
+				() -> databaseHandler.getCustomSettings().getDefaultWebhookName(),
+				() -> databaseHandler.getCustomSettings().getFormatterMode(), packet -> {
+					handleDiscordMessage(packet);
+				});
+
+		// Initialize the HTTPd server
+		try {
+			HTTPd httpServer = new HTTPd();
+			httpServer.setup(settings.getHttpdPort());
+			httpServer.registerPages(settings.getHttpdSecret(), databaseHandler, discordServerLink);
+			httpServer.start(settings.getHttpdPort());
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+
+		// Start the listening loop for the ChatServer on another thread
+		Runnable inGameLinkThreadRunner = new Runnable() {
 			@Override
 			public void run() {
 				try {
 					link.startLoop(t -> {
-						handlePackedMessage(t);
+						handleInGameMessage(t);
 					});
 				} catch (ServerAlreadyRunningException e) {
 					// NO OP, should never happen
 				}
 			}
-
-			private void sendMessage(IPackedMessageData inMsg, TextChannel channel) {
-				String message = inMsg.getMessage();
-				List<Member> members = channel.getMembers();
-				for (Member m : members) {
-					if (message.toLowerCase().contains("@"+m.getEffectiveName().toLowerCase())) {
-						message = message.replace("@"+m.getEffectiveName(), m.getAsMention());
-					}
-					if (message.toLowerCase().contains("@"+m.getUser().getName().toLowerCase())) {
-						message = message.replace("@"+m.getUser().getName(), m.getAsMention());
-					}
-				}
-				message = message.replace("@everyone", "@" + "\u00a0" + "everyone").replace("@here", "@" + "\u00a0" + "here");
-				channel.sendMessage(inMsg.getUserNickname() + ": " + message).queue();
-			}
-			
-			private void handlePackedMessage(IPackedMessageData inMsg) {
-				PreparedStatement getChannelByGlobal;
-				try {
-					//Get the Discord TextChannel ID
-					getChannelByGlobal = Database.getPreparedStatement("getChannelByGlobal");
-					getChannelByGlobal.setString(1, inMsg.getChatroom());
-					ResultSet results = getChannelByGlobal.executeQuery();
-					while (results.next()) {
-						//Get the Discord TextChannel instance by the ID
-						TextChannel channel = DiscordLink.jda.getTextChannelById(results.getString(2));
-						try {
-							//See if there are any webhooks if not send the message and return
-							List<Webhook> webhook = channel.getWebhooks().complete(); // some webhook instance
-
-							if (webhook.size() == 0) {
-								sendMessage(inMsg, channel);
-								continue;
-							}
-							//Loop all webhooks looking for "GlobalChat"
-							for (Webhook hook : webhook) {
-								if (hook.getName().equalsIgnoreCase("GlobalChat")) {
-									WebhookClientBuilder builder = hook.newClient();
-									WebhookClient client = builder.build();
-									WebhookMessageBuilder builder1 = new WebhookMessageBuilder();
-
-									PreparedStatement getUserByGlobal = null;
-									try {
-										getUserByGlobal = Database.getPreparedStatement("getUserByGlobal");
-									} catch (Exception e2) {
-										// TODO Auto-generated catch block
-										e2.printStackTrace();
-									}
-									getUserByGlobal.setString(1, Integer.toString(inMsg.getUserId()));
-									ResultSet results2 = getUserByGlobal.executeQuery();
-									if (results2.next()) {
-										User user = DiscordLink.jda.getUserById(results2.getString(1));
-										builder1.setAvatarUrl(user.getAvatarUrl());
-									} else {
-										builder1.setAvatarUrl(hook.getDefaultUser().getAvatarUrl());
-									}
-									String nick = inMsg.getUserNickname();
-
-									String message = inMsg.getMessage();
-									List<Member> members = channel.getMembers();
-									
-									for (Member m : members) {
-										if (message.toLowerCase().contains("@"+m.getEffectiveName().toLowerCase())) {
-											message = message.replace("@"+m.getEffectiveName(), m.getAsMention());
-										}
-										if (message.toLowerCase().contains("@"+m.getUser().getName().toLowerCase())) {
-											message = message.replace("@"+m.getUser().getName(), m.getAsMention());
-										}
-										
-									}
-									message = message.replace("@everyone", "@" + "\u00a0" + "everyone").replace("@here", "@" + "\u00a0" + "here");
-									builder1.setContent(message
-											.replaceFirst(Pattern.quote("<" + inMsg.getUserNickname() + ">"), ""));
-									builder1.setUsername(nick);
-									WebhookMessage message1 = builder1.build();
-									client.send(message1);
-									client.close();
-									continue;
-								}
-								sendMessage(inMsg, channel);
-							}
-						} catch (Exception e1) {
-							System.out.println(e1);
-						}
-					}
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
 		};
-		Thread thread = new Thread(test);
-		thread.start();
+		Thread inGameLinkThread = new Thread(inGameLinkThreadRunner);
+		inGameLinkThread.start();
 	}
 
+	public static BaseSettings requestSettingsToUser() {
+		// We've got a fresh database, we need to ask some questions.
+		System.out.println("Enter your Discord Bot token: ");
+		Scanner scanner = new Scanner(System.in);
+		String discordToken = scanner.nextLine();
+
+		System.out.println("Enter the default *ID* for global messages to show in game.");
+		System.out.println("(This will be the 'user_id' column in the 'cohchat' DB: ");
+		String defaultGID = scanner.nextLine();
+
+		System.out.println("IPAddress for your chatserver (127.0.0.1?): ");
+		String chatserverIP = scanner.nextLine();
+
+		System.out.println("HTTPd port for external script interfacing: ");
+		int httpdPort = Integer.parseInt(scanner.nextLine());
+
+		System.out.println("HTTPd secret, basically the password sent with all get requests: ");
+		String httpdSecret = scanner.nextLine();
+
+		System.out.println(
+				"If you need to modify these settings you can open 'discordlink.sqlite3' in an SQLite editor.");
+		scanner.close();
+
+		return new BaseSettings(chatserverIP, 31415, defaultGID, discordToken, httpdPort, httpdSecret);
+	}
+
+	private void handleInGameMessage(IPackedMessageData inMsg) {
+		try {
+
+			Optional<String> discordUserId = databaseHandler.getDiscordId(inMsg.getUserId());
+
+			for (String discordChannelId : databaseHandler.getDiscordChannelListFromGame(inMsg.getChatroom())) {
+
+				try {
+					discordServerLink.sendMessageToChannel(discordUserId, inMsg.getUserNickname(), inMsg.getMessage(),
+							discordChannelId);
+				} catch (Exception e1) {
+					System.out.println(e1);
+				}
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
+	private void handleDiscordMessage(IDiscordMessageData discordMessage) {
+		Iterable<String> channelList = databaseHandler
+				.getGameChannelListFromDiscord(discordMessage.getDiscordChannelId());
+
+		Optional<Integer> maybeCharacterId = databaseHandler.getCharacterId(discordMessage.getUserId());
+
+		boolean isCharacterLinked = maybeCharacterId.isPresent();
+
+		// Prepare the message for the Game server
+		String inGameMsg = discordMessage.getMessage();
+		inGameMsg = EmojiUtils.shortCodify(inGameMsg);
+
+		// Get the character ID to send towards. If needed, prepend the Discord username
+		// to the message.
+		Integer characterId = maybeCharacterId.orElse(Integer.valueOf(defaultGID));
+		if (!isCharacterLinked) {
+			inGameMsg = discordMessage.getUserName() + ": " + inGameMsg;
+		}
+
+		// This will store the channels to echo towards. Use a HashSet to prevent
+		// echoing several times to the same channel.
+		HashSet<String> disscordChannelsToEchoTo = new HashSet<>();
+
+		// Send the messages to all linked in-game channels.
+		for (String channelId : channelList) {
+
+			// Send the message to the in-game channel
+			link.sendMessage(channelId, characterId, "DiscordLink", inGameMsg);
+
+			// Retrieve the ID of other Discord channels to echo towards
+			disscordChannelsToEchoTo.addAll(databaseHandler.getDiscordChannelListFromGame(channelId));
+		}
+
+		// Echo the message to the other Discord channels
+		for (String echoDiscordChannel : disscordChannelsToEchoTo) {
+			// Do not send the message to the current channel.
+			if (discordMessage.getDiscordChannelId().equals(echoDiscordChannel))
+				continue;
+			discordServerLink.sendMessageToChannel(Optional.of(discordMessage.getUserId()),
+					discordMessage.getUserName(), discordMessage.getMessage(), echoDiscordChannel);
+		}
+	}
 }
