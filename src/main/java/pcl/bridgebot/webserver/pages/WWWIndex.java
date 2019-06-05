@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -32,7 +33,13 @@ public class WWWIndex implements HttpHandler {
 
 		registerQueryEndpoint(QueryEndpointHandler.create("Error while adding channel", "./channels",
 				context -> context.get("action").equals("addChan"), context -> {
-					String gname = java.net.URLDecoder.decode(context.get("gname"), StandardCharsets.UTF_8);
+					String gname = null;
+					try {
+						gname = java.net.URLDecoder.decode(context.get("gname"), StandardCharsets.UTF_8.name());
+					} catch (UnsupportedEncodingException e) {
+						// TODO Auto-generated catch block
+						e.printStackTrace();
+					}
 					return database.handleAddChannelAction(gname, context.get("discordid"));
 				}));
 		registerQueryEndpoint(QueryEndpointHandler.create("Error while removing channel", "./channels",
