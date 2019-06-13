@@ -7,6 +7,7 @@ import java.util.Map;
 import com.sun.net.httpserver.HttpHandler;
 import com.sun.net.httpserver.HttpServer;
 
+import pcl.bridgebot.DiscordLink;
 import pcl.bridgebot.database.DatabaseHandler;
 import pcl.bridgebot.discordserverlink.DiscordServerLink;
 import pcl.bridgebot.webserver.pages.WWWChannelList;
@@ -32,7 +33,7 @@ public class HTTPd {
 	 */
 	public void registerContext(String route, HttpHandler handlerIn, String pageName) {
 		if (server != null) {
-			System.out.println("Adding " + pageName + " to page list");
+			DiscordLink.log.info("Adding " + pageName + " to page list");
 			pages.put(pageName, route);
 			server.createContext(route, handlerIn);
 		}
@@ -40,12 +41,12 @@ public class HTTPd {
 
 	public void start(int port) {
 		if (server != null) {
-			System.out.println("Starting HTTPD On port " + port);
+			DiscordLink.log.info("Starting HTTPD On port " + port);
 			server.setExecutor(null); // creates a default executor
 			server.start();
-			System.out.println("Please visit http://127.0.0.1:" + port + " To configure the bridge");
+			DiscordLink.log.info("Please visit http://127.0.0.1:" + port + " To configure the bridge");
 		} else {
-			System.out.println("httpd server was null!");
+			DiscordLink.log.error("httpd server was null!");
 		}
 	}
 

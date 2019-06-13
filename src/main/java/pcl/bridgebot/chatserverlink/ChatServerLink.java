@@ -8,6 +8,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
+import pcl.bridgebot.DiscordLink;
 import pcl.bridgebot.chatserverlink.impl.PackedMessageDataFactory;
 import pcl.bridgebot.chatserverlink.impl.UTF8MessageSplitter;
 
@@ -74,7 +75,7 @@ public class ChatServerLink {
 				Socket clientSocket = new Socket(hostName, portNumber);
 
 				try {
-					System.out.println("ChatServer connected.");
+					DiscordLink.log.info("ChatServer connected.");
 					InputStream inFromServer = clientSocket.getInputStream();
 					OutputStream outToServer = clientSocket.getOutputStream();
 
@@ -93,7 +94,7 @@ public class ChatServerLink {
 								outToServer.write(dataToSend, 0, dataToSend.length);
 							} catch (Exception e) {
 								// NO OP (server was closed)
-								System.out.println("Issue while sending packet : " + e);
+								DiscordLink.log.error("Issue while sending packet : " + e);
 							}
 						}
 
@@ -112,7 +113,7 @@ public class ChatServerLink {
 							// Manually read a LE short from the stream
 							int packetSize = ((buffer[1] & 0xff) << 8) + (buffer[0] & 0xff);
 							if (packetSize > 1000) {
-								System.out.println(String.format(
+								DiscordLink.log.warn(String.format(
 										"Announced size was 0x%02X bytes, longer than the buffer. Skipping packet",
 										packetSize));
 								continue;
@@ -125,22 +126,22 @@ public class ChatServerLink {
 									onMessageReceived.accept(result);
 								} catch (Exception e) {
 									// NO OP (server was closed)
-									System.out.println("Issue while receiving packet : " + e);
+									DiscordLink.log.error("Issue while receiving packet : " + e);
 								}
 							}
 						}
 					}
 				} catch (InterruptedException | IOException e) {
-					System.out.println("Error with ChatServer connection : " + e);
+					DiscordLink.log.error("Error with ChatServer connection : " + e);
 				}
 
 				// Close the socket if possible
 				clientSocket.close();
 			} catch (IOException e) {
-				System.out.println("Error while connecting to ChatServer : " + e);
+				DiscordLink.log.error("Error while connecting to ChatServer : " + e);
 			}
 			if(shouldRun) {
-				System.out.println("ChatServer disconnected. Retrying connection in 5s...");
+				DiscordLink.log.info("ChatServer disconnected. Retrying connection in 5s...");
 				try {
 					TimeUnit.MILLISECONDS.sleep(5000);
 				}

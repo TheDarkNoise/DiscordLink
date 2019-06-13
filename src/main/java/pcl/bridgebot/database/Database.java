@@ -11,6 +11,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import pcl.bridgebot.DiscordLink;
+
 class UpdateQuery {
 	private int minVersion;
 	private String updateQuery;
@@ -123,7 +125,7 @@ public class Database {
 
 	public static void updateDatabase() {
 		int currentVer = getDBVer();
-		//IRCBot.log.info("Updating database! Current version: " + currentVer);
+		DiscordLink.log.info("Updating database! Current version: " + currentVer);
 		for (UpdateQuery query : updateQueries) {
 			if (currentVer < query.getMinVersion()) {
 				try {
@@ -134,8 +136,8 @@ public class Database {
 				}
 			}
 		}
-		//IRCBot.log.info("Database update complete! New version: " + getDBVer());
-		//IRCBot.log.info("Database update ran " + counter + " queries");
+		DiscordLink.log.info("Database update complete! New version: " + getDBVer());
+		//DiscordLink.log.info("Database update ran " + counter + " queries");
 	}
 
 	public static boolean storeJsonData(String key, String data) {
@@ -147,7 +149,7 @@ public class Database {
 //				e.printStackTrace();
 //		}
 		try {
-			//IRCBot.log.info("storeJsonData: ('" + key.toLowerCase() + "', '" + data + "')");
+			DiscordLink.log.info("storeJsonData: ('" + key.toLowerCase() + "', '" + data + "')");
 			PreparedStatement stmt = getPreparedStatement("storeJSON");
 			stmt.setString(1, key);
 			stmt.setString(2, data);
@@ -155,14 +157,14 @@ public class Database {
 
 			return true;
 		} catch (SQLException e) {
-			//IRCBot.log.error("Exception is: ", e);
+			DiscordLink.log.error("Exception is: ", e);
 			e.printStackTrace();
 		} catch (Exception e) {
-			//IRCBot.log.error("Exception is: ", e);
+			DiscordLink.log.error("Exception is: ", e);
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		//IRCBot.log.error("storeJsonData false");
+		DiscordLink.log.error("storeJsonData false");
 		return false;
 	}
 
@@ -181,21 +183,21 @@ public class Database {
 			ResultSet theResult = stmt.executeQuery();
 			if (theResult.next()) {
 				String result = theResult.getString(1);
-				//IRCBot.log.info("JsonData: " + result);
+				DiscordLink.log.info("JsonData: " + result);
 				return result;
 			}
-			//IRCBot.log.error("JsonData was empty, returning empty string");
+			DiscordLink.log.error("JsonData was empty, returning empty string");
 			return "";
 		} catch (SQLException e) {
-			//IRCBot.log.error("Code: " + e.getErrorCode());
-			//IRCBot.log.error("Exception is: ", e);
+			DiscordLink.log.error("Code: " + e.getErrorCode());
+			DiscordLink.log.error("Exception is: ", e);
 			e.printStackTrace();
 		} catch (Exception e) {
-			//IRCBot.log.error("Exception is: ", e);
+			DiscordLink.log.error("Exception is: ", e);
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		//IRCBot.log.error("JsonData try/catch failed");
+		DiscordLink.log.error("JsonData try/catch failed");
 		return "";
 	}
 
