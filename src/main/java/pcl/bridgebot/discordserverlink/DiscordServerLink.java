@@ -19,6 +19,7 @@ import net.dv8tion.jda.webhook.WebhookClient;
 import net.dv8tion.jda.webhook.WebhookClientBuilder;
 import net.dv8tion.jda.webhook.WebhookMessage;
 import net.dv8tion.jda.webhook.WebhookMessageBuilder;
+import pcl.bridgebot.DiscordLink;
 
 public class DiscordServerLink {
     private final Supplier<String> defaultWebhookNameGetter;
@@ -37,7 +38,7 @@ public class DiscordServerLink {
                 .addEventListener(new MessageListenerAdapter(this, messageHandler)) // The class that will handle events
                 .build();
         jda.awaitReady(); // Blocking guarantees that JDA will be completely loaded.
-        System.out.println("Finished Building JDA!");
+        DiscordLink.log.info("Finished Building JDA!");
     }
 
     public void ensureJDAFromEvent(JDA jda) {
