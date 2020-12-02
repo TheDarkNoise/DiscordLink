@@ -22,7 +22,7 @@ You probably want to add the bot to your server :
     - Go to the URL above in your browser
     - Select the Discord server you want, and click on "Authorize" to add the bot.
 
-You will need the 'bot token' of the Discord application. It is available after creating the Bot, under the "bot" tab (there is a "click to reveal" link in the middle of the description).
+You will need the 'bot token' of the Discord application. It is available after creating the Bot, under the "bot" tab (there is a "click to reveal" link in the middle of the description).  While you are there, also enable the "SERVER MEMBERS INTENT" under "Privileged Gateway Intents" otherwise you will not have Discord member information.
 
 ### Step 2 : Create a City of Heroes default account
 
