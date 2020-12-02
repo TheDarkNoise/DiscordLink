@@ -22,7 +22,7 @@ import pcl.bridgebot.webserver.HTTPd;
 
 public class DiscordLink {
 
-	public static final Logger log = LoggerFactory.getLogger(DiscordLink.class);
+	//public static final Logger log = LoggerFactory.getLogger(DiscordLink.class);
 	private final ChatServerLink link;
 	private final DiscordServerLink discordServerLink;
 	private final DatabaseHandler databaseHandler;
@@ -43,15 +43,15 @@ public class DiscordLink {
 			// exception that
 			// will represent it
 			e.printStackTrace();
-			DiscordLink.log.error("DiscordLink initialization Failure!");
+			System.out.println("DiscordLink initialization Failure!");
 			return;
 		} catch (SQLException e) {
 			e.printStackTrace();
-			DiscordLink.log.error("Database Failure!");
+			System.out.println("Database Failure!");
 			return;
 		} catch (ClassNotFoundException e) {
-			DiscordLink.log.error(e.getMessage());
-			DiscordLink.log.error("JDBC Failure!");
+			System.out.println(e.getMessage());
+			System.out.println("JDBC Failure!");
 			return;
 		}
 	}
@@ -62,7 +62,7 @@ public class DiscordLink {
 
 		// Initialize the database
 		if (!DatabaseHandler.initialize()) {
-			DiscordLink.log.error("Database Failure!");
+			System.out.println("Database Failure!");
 		}
 
 		databaseHandler = new DatabaseHandler();
@@ -81,7 +81,7 @@ public class DiscordLink {
 			}
 		} catch (Exception e1) {
 			e1.printStackTrace();
-			DiscordLink.log.error("Error while loading or saving settings !");
+			System.out.println("Error while loading or saving settings !");
 		}
 		defaultGID = settings.getDefaultGID();
 

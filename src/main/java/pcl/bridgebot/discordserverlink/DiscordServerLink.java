@@ -8,20 +8,22 @@ import java.util.regex.Pattern;
 
 import javax.security.auth.login.LoginException;
 
-import net.dv8tion.jda.core.AccountType;
-import net.dv8tion.jda.core.JDA;
-import net.dv8tion.jda.core.JDABuilder;
-import net.dv8tion.jda.core.entities.Member;
-import net.dv8tion.jda.core.entities.TextChannel;
-import net.dv8tion.jda.core.entities.User;
-import net.dv8tion.jda.core.entities.Webhook;
-import net.dv8tion.jda.webhook.WebhookClient;
-import net.dv8tion.jda.webhook.WebhookClientBuilder;
-import net.dv8tion.jda.webhook.WebhookMessage;
-import net.dv8tion.jda.webhook.WebhookMessageBuilder;
+import club.minnced.discord.webhook.send.WebhookMessageBuilder;
+import net.dv8tion.jda.api.JDA;
+import net.dv8tion.jda.api.JDABuilder;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.entities.Webhook;
+import club.minnced.discord.webhook.WebhookClient;
+import club.minnced.discord.webhook.WebhookClientBuilder;
+import net.dv8tion.jda.api.requests.GatewayIntent;
+import net.dv8tion.jda.api.utils.ChunkingFilter;
+import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import pcl.bridgebot.DiscordLink;
 
 public class DiscordServerLink {
+
     private final Supplier<String> defaultWebhookNameGetter;
 
     private final Supplier<String> formatterModeGetter;
@@ -33,12 +35,14 @@ public class DiscordServerLink {
             throws LoginException, InterruptedException {
         this.defaultWebhookNameGetter = defaultWebhookNameGetter;
         this.formatterModeGetter = formatterModeGetter;
-        jda = new JDABuilder(AccountType.BOT) // We are creating a Bot account
-                .setToken(discordToken) // The token of the account that is logging in.
-                .addEventListener(new MessageListenerAdapter(this, messageHandler)) // The class that will handle events
+        jda = JDABuilder.createDefault(discordToken)
+                .addEventListeners(new MessageListenerAdapter(this, messageHandler)) // The class that will handle events
+                .setChunkingFilter(ChunkingFilter.ALL)
+                .setMemberCachePolicy(MemberCachePolicy.ALL)
+                .enableIntents(GatewayIntent.GUILD_MEMBERS)
                 .build();
         jda.awaitReady(); // Blocking guarantees that JDA will be completely loaded.
-        DiscordLink.log.info("Finished Building JDA!");
+        System.out.println("Finished Building JDA!");
     }
 
     public void ensureJDAFromEvent(JDA jda) {
@@ -52,12 +56,12 @@ public class DiscordServerLink {
         TextChannel channel = jda.getTextChannelById(discordChannelId);
         try {
             // Try to send the message over a Webhook if available
-            List<Webhook> webhook = channel.getWebhooks().complete();
+            List<Webhook> webhook = channel.retrieveWebhooks().complete();
             for (Webhook hook : webhook) {
                 // Check if the Webhook name matches the required name.
                 if (!hook.getName().equalsIgnoreCase(defaultWebhookNameGetter.get()))
                     continue;
-                sendWebhookMessage(userId, userNickname, message, channel, hook);
+                sendWebhookMessage(userId, userNickname, message, channel, hook.getUrl());
                 return;
             }
 
@@ -94,7 +98,7 @@ public class DiscordServerLink {
     }
 
     private void sendWebhookMessage(Optional<String> userId, String inGameUsername, String message, TextChannel channel,
-            Webhook hook) {
+            String hook) {
         String formattedMessage = message;
 
         // Format the message to include @ mentions to the users from the channel
@@ -112,18 +116,20 @@ public class DiscordServerLink {
         // character in the middle of them)
         formattedMessage = formattedMessage.replace("@everyone", "@" + "\u00a0" + "everyone");
         formattedMessage = formattedMessage.replace("@here", "@" + "\u00a0" + "here");
-
+        WebhookClient client = null;
         // Prepare to send the message over the webhook
-        WebhookClientBuilder clientBuilder = hook.newClient();
-        WebhookClient client = clientBuilder.build();
-        WebhookMessageBuilder messageBuilder = new WebhookMessageBuilder();
-
+        try {
+            client = WebhookClient.withUrl(hook.replace("discord.com", "discordapp.com").replace("v6/", ""));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         Optional<String> discordUsername = Optional.empty();
+        WebhookMessageBuilder builder = new WebhookMessageBuilder();
 
         User foundUser;
         if (userId.isPresent() && (foundUser = jda.getUserById(userId.get())) != null) {
             // Use the user avatar for the WebHook message.
-            messageBuilder.setAvatarUrl(foundUser.getAvatarUrl());
+            builder.setAvatarUrl(foundUser.getAvatarUrl());
 
             // Get the Channel User name, or global user name if the channel name is
             // unavailable
@@ -134,18 +140,17 @@ public class DiscordServerLink {
             discordUsername = Optional.of(maybeMatchingMemberName.orElse(foundUser.getName()));
         } else {
             // Otherwise, fall back on the default hook avatar for this WebHook.
-            messageBuilder.setAvatarUrl(hook.getDefaultUser().getAvatarUrl());
+            //builder.setAvatarUrl(builder.);
         }
 
         // Set the username for the WebHook message, sung the given formatter
-        messageBuilder.setUsername(getFormattedUsername(discordUsername, inGameUsername));
+        builder.setUsername(getFormattedUsername(discordUsername, inGameUsername));
         // Set the contents for the WebHook message
-        messageBuilder.setContent(message.replaceFirst(Pattern.quote("<" + inGameUsername + ">"), ""));
+        builder.setContent(message.replaceFirst(Pattern.quote("<" + inGameUsername + ">"), ""));
 
         // Send the message to the WebHook
-        WebhookMessage webhookMessage = messageBuilder.build();
-        client.send(webhookMessage);
-        client.close();
+        //WebhookMessage webhookMessage = messageBuilder.build();
+        client.send(builder.build());
     }
 
     public boolean isSelfUser(User author) {

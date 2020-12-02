@@ -2,12 +2,12 @@ package pcl.bridgebot.discordserverlink;
 
 import java.util.function.Consumer;
 
-import net.dv8tion.jda.core.entities.ChannelType;
-import net.dv8tion.jda.core.entities.Member;
-import net.dv8tion.jda.core.entities.Message;
-import net.dv8tion.jda.core.entities.User;
-import net.dv8tion.jda.core.events.message.MessageReceivedEvent;
-import net.dv8tion.jda.core.hooks.ListenerAdapter;
+import net.dv8tion.jda.api.entities.ChannelType;
+import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.User;
+import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
+import net.dv8tion.jda.api.hooks.ListenerAdapter;
 import pcl.bridgebot.discordserverlink.impl.DiscordMessageData;
 
 public class MessageListenerAdapter extends ListenerAdapter {
@@ -22,7 +22,7 @@ public class MessageListenerAdapter extends ListenerAdapter {
 
     /**
      * @param event An event containing information about a
-     *              {@link net.dv8tion.jda.core.entities.Message Message} that was
+     *              {@link net.dv8tion.jda.api.entities.Message Message} that was
      *              sent in a channel.
      */
     @Override

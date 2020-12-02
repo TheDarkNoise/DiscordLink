@@ -125,7 +125,7 @@ public class Database {
 
 	public static void updateDatabase() {
 		int currentVer = getDBVer();
-		DiscordLink.log.info("Updating database! Current version: " + currentVer);
+		System.out.println("Updating database! Current version: " + currentVer);
 		for (UpdateQuery query : updateQueries) {
 			if (currentVer < query.getMinVersion()) {
 				try {
@@ -136,8 +136,8 @@ public class Database {
 				}
 			}
 		}
-		DiscordLink.log.info("Database update complete! New version: " + getDBVer());
-		//DiscordLink.log.info("Database update ran " + counter + " queries");
+		System.out.println("Database update complete! New version: " + getDBVer());
+		//System.out.println("Database update ran " + counter + " queries");
 	}
 
 	public static boolean storeJsonData(String key, String data) {
@@ -149,7 +149,7 @@ public class Database {
 //				e.printStackTrace();
 //		}
 		try {
-			DiscordLink.log.info("storeJsonData: ('" + key.toLowerCase() + "', '" + data + "')");
+			System.out.println("storeJsonData: ('" + key.toLowerCase() + "', '" + data + "')");
 			PreparedStatement stmt = getPreparedStatement("storeJSON");
 			stmt.setString(1, key);
 			stmt.setString(2, data);
@@ -157,14 +157,14 @@ public class Database {
 
 			return true;
 		} catch (SQLException e) {
-			DiscordLink.log.error("Exception is: ", e);
+			System.out.println("Exception is: " + e);
 			e.printStackTrace();
 		} catch (Exception e) {
-			DiscordLink.log.error("Exception is: ", e);
+			System.out.println("Exception is: " + e);
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		DiscordLink.log.error("storeJsonData false");
+		System.out.println("storeJsonData false");
 		return false;
 	}
 
@@ -183,21 +183,21 @@ public class Database {
 			ResultSet theResult = stmt.executeQuery();
 			if (theResult.next()) {
 				String result = theResult.getString(1);
-				DiscordLink.log.info("JsonData: " + result);
+				System.out.println("JsonData: " + result);
 				return result;
 			}
-			DiscordLink.log.error("JsonData was empty, returning empty string");
+			System.out.println("JsonData was empty, returning empty string");
 			return "";
 		} catch (SQLException e) {
-			DiscordLink.log.error("Code: " + e.getErrorCode());
-			DiscordLink.log.error("Exception is: ", e);
+			System.out.println("Code: " + e.getErrorCode());
+			System.out.println("Exception is: " + e);
 			e.printStackTrace();
 		} catch (Exception e) {
-			DiscordLink.log.error("Exception is: ", e);
+			System.out.println("Exception is: " + e);
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
-		DiscordLink.log.error("JsonData try/catch failed");
+		System.out.println("JsonData try/catch failed");
 		return "";
 	}
 

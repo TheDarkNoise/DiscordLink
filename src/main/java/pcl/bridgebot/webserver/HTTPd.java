@@ -33,7 +33,7 @@ public class HTTPd {
 	 */
 	public void registerContext(String route, HttpHandler handlerIn, String pageName) {
 		if (server != null) {
-			DiscordLink.log.info("Adding " + pageName + " to page list");
+			System.out.println("Adding " + pageName + " to page list");
 			pages.put(pageName, route);
 			server.createContext(route, handlerIn);
 		}
@@ -41,12 +41,12 @@ public class HTTPd {
 
 	public void start(int port) {
 		if (server != null) {
-			DiscordLink.log.info("Starting HTTPD On port " + port);
+			System.out.println("Starting HTTPD On port " + port);
 			server.setExecutor(null); // creates a default executor
 			server.start();
-			DiscordLink.log.info("Please visit http://127.0.0.1:" + port + " To configure the bridge");
+			System.out.println("Please visit http://127.0.0.1:" + port + " To configure the bridge");
 		} else {
-			DiscordLink.log.error("httpd server was null!");
+			System.out.println("httpd server was null!");
 		}
 	}
 
