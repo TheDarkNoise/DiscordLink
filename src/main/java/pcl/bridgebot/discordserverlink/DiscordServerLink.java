@@ -24,11 +24,11 @@ import pcl.bridgebot.DiscordLink;
 
 public class DiscordServerLink {
 
-    private final Supplier<String> defaultWebhookNameGetter;
+    private static Supplier<String> defaultWebhookNameGetter = null;
 
-    private final Supplier<String> formatterModeGetter;
+    private static Supplier<String> formatterModeGetter = null;
 
-    private JDA jda;
+    public static JDA jda;
 
     public DiscordServerLink(String discordToken, Supplier<String> defaultWebhookNameGetter,
             Supplier<String> formatterModeGetter, Consumer<IDiscordMessageData> messageHandler)
@@ -49,8 +49,8 @@ public class DiscordServerLink {
         this.jda = jda;
     }
 
-    public void sendMessageToChannel(Optional<String> userId, String userNickname, String message,
-            String discordChannelId) {
+    public static void sendMessageToChannel(Optional<String> userId, String userNickname, String message,
+                                            String discordChannelId) {
 
         // Get the Discord TextChannel instance by the ID
         TextChannel channel = jda.getTextChannelById(discordChannelId);
@@ -77,7 +77,7 @@ public class DiscordServerLink {
         sendRawMessage(userNickname, message, channel);
     }
 
-    private void sendRawMessage(String userNickname, String message, TextChannel channel) {
+    public static void sendRawMessage(String userNickname, String message, TextChannel channel) {
         // Format the message to include @ mentions to the users from the channel
         List<Member> members = channel.getMembers();
         for (Member m : members) {
@@ -97,8 +97,8 @@ public class DiscordServerLink {
         channel.sendMessage(userNickname + ": " + message).queue();
     }
 
-    private void sendWebhookMessage(Optional<String> userId, String inGameUsername, String message, TextChannel channel,
-            String hook) {
+    public static void sendWebhookMessage(Optional<String> userId, String inGameUsername, String message, TextChannel channel,
+                                          String hook) {
         String formattedMessage = message;
 
         // Format the message to include @ mentions to the users from the channel
@@ -186,7 +186,7 @@ public class DiscordServerLink {
         }
     }
 
-    private String getFormattedUsername(Optional<String> discordUsername, String inGameUsername) {
+    private static String getFormattedUsername(Optional<String> discordUsername, String inGameUsername) {
         String formatterMode = "InGame";
         if (formatterModeGetter != null) {
             formatterMode = formatterModeGetter.get();

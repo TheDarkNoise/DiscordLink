@@ -10,10 +10,7 @@ import com.sun.net.httpserver.HttpServer;
 import pcl.bridgebot.DiscordLink;
 import pcl.bridgebot.database.DatabaseHandler;
 import pcl.bridgebot.discordserverlink.DiscordServerLink;
-import pcl.bridgebot.webserver.pages.WWWChannelList;
-import pcl.bridgebot.webserver.pages.WWWCustomSettings;
-import pcl.bridgebot.webserver.pages.WWWIndex;
-import pcl.bridgebot.webserver.pages.WWWUserList;
+import pcl.bridgebot.webserver.pages.*;
 
 public class HTTPd {
 	private HttpServer server;
@@ -65,5 +62,6 @@ public class HTTPd {
 		registerContext("/channels", new WWWChannelList(adapter), "Channels");
 		registerContext("/users", new WWWUserList(adapter), "Users");
 		registerContext("/settings", new WWWCustomSettings(databaseHandler), "Settings");
+		registerContext("/sendmsg", new WWWSendMessage(), "SendMessage");
 	}
 }
