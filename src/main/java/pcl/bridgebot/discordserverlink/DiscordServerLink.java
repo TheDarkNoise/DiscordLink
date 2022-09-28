@@ -51,30 +51,38 @@ public class DiscordServerLink {
 
     public static void sendMessageToChannel(Optional<String> userId, String userNickname, String message,
                                             String discordChannelId) {
-
         // Get the Discord TextChannel instance by the ID
-        TextChannel channel = jda.getTextChannelById(discordChannelId);
         try {
-            // Try to send the message over a Webhook if available
-            List<Webhook> webhook = channel.retrieveWebhooks().complete();
-            for (Webhook hook : webhook) {
-                // Check if the Webhook name matches the required name.
-                if (!hook.getName().equalsIgnoreCase(defaultWebhookNameGetter.get()))
-                    continue;
-                sendWebhookMessage(userId, userNickname, message, channel, hook.getUrl());
-                return;
-            }
+            TextChannel channel = jda.getTextChannelById(discordChannelId);
 
+            try {
+                // Try to send the message over a Webhook if available
+                List<Webhook> webhook = channel.retrieveWebhooks().complete();
+                for (Webhook hook : webhook) {
+                    // Check if the Webhook name matches the required name.
+                    if (!hook.getName().equalsIgnoreCase(defaultWebhookNameGetter.get()))
+                        continue;
+                    sendWebhookMessage(userId, userNickname, message, channel, hook.getUrl());
+                    return;
+                }
+
+            } catch (Exception e) {
+                // NO OP : ignore error if the WebHook retrieval failed
+                // The reason is that this error can be due the the WebHook management
+                // permissions not being given to the bot
+
+                // If we get here, we didn't find any WebHook (or the WebHook list retrieval
+                // failed for some reason)
+                // Send the message as "raw" message
+                System.out.println("Failing back to standard message, check permissions *USUALLY* caused by not having \"ManageWebhooks\"");
+                sendRawMessage(userNickname, message, channel);
+            }
         } catch (Exception e) {
-            // NO OP : ignore error if the WebHook retrieval failed
-            // The reason is that this error can be due the the WebHook management
-            // permissions not being given to the bot
+            System.out.println ("Unable to get channel! " + discordChannelId + " doesn't resolve for some reason. " + e);
         }
 
-        // If we get here, we didn't find any WebHook (or the WebHook list retrieval
-        // failed for some reason)
-        // Send the message as "raw" message
-        sendRawMessage(userNickname, message, channel);
+
+
     }
 
     public static void sendRawMessage(String userNickname, String message, TextChannel channel) {
