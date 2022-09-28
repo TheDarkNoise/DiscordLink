@@ -40,7 +40,7 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     compile group: 'org.apache.httpcomponents', name: 'httpcore-nio', version: '4.4.11'
     compile 'org.xerial:sqlite-jdbc:3.23.1'
-    compile("net.dv8tion:JDA:4.2.0_168") {
+    compile("net.dv8tion:JDA:5.0.0-alpha.10") {
         exclude module: 'opus-java'
     }
     compile("club.minnced:discord-webhooks:0.2.0")
