@@ -190,7 +190,7 @@ public class DiscordLink {
 
 		// This will store the channels to echo towards. Use a HashSet to prevent
 		// echoing several times to the same channel.
-		HashSet<String> disscordChannelsToEchoTo = new HashSet<>();
+		HashSet<String> discordChannelsToEchoTo = new HashSet<>();
 
 		// Send the messages to all linked in-game channels.
 		for (String channelId : channelList) {
@@ -199,11 +199,11 @@ public class DiscordLink {
 			link.sendMessage(channelId, characterId, "DiscordLink", inGameMsg);
 
 			// Retrieve the ID of other Discord channels to echo towards
-			disscordChannelsToEchoTo.addAll(databaseHandler.getDiscordChannelListFromGame(channelId));
+			discordChannelsToEchoTo.addAll(databaseHandler.getDiscordChannelListFromGame(channelId));
 		}
 
 		// Echo the message to the other Discord channels
-		for (String echoDiscordChannel : disscordChannelsToEchoTo) {
+		for (String echoDiscordChannel : discordChannelsToEchoTo) {
 			// Do not send the message to the current channel.
 			if (discordMessage.getDiscordChannelId().equals(echoDiscordChannel))
 				continue;
