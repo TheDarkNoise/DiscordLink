@@ -5,3 +5,4 @@ bin/
 build/
 discordlink.sqlite3
 .idea/
+*.sqlite3

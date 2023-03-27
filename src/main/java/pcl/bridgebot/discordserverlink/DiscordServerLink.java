@@ -68,7 +68,7 @@ public class DiscordServerLink {
 
             } catch (Exception e) {
                 // NO OP : ignore error if the WebHook retrieval failed
-                // The reason is that this error can be due the the WebHook management
+                // The reason is that this error can be due to the WebHook management
                 // permissions not being given to the bot
 
                 // If we get here, we didn't find any WebHook (or the WebHook list retrieval

@@ -19,6 +19,7 @@ import com.sun.net.httpserver.HttpHandler;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 
+import pcl.bridgebot.database.AdminSettings;
 import pcl.bridgebot.database.CustomSettings;
 import pcl.bridgebot.database.DatabaseHandler;
 import pcl.bridgebot.webserver.QueryEndpointHandler;
@@ -51,10 +52,24 @@ public class WWWIndex implements HttpHandler {
 		registerQueryEndpoint(QueryEndpointHandler.create("Error while removing user", "./users",
 				context -> context.get("action").equals("delUser"),
 				context -> database.handleRemoveUserAction(context.get("discordid"))));
+		registerQueryEndpoint(QueryEndpointHandler.create("Error while removing user", "./quit",
+				context -> context.get("action").equals("quit"), context -> {
+						System.exit(0);
+						return true;
+				}));
 		registerQueryEndpoint(QueryEndpointHandler.create("Error while updating settings", "./settings",
 				context -> context.get("action").equals("updateSettings"), context -> {
 					try {
 						database.setCustomSettings(new CustomSettings(context.get("format"), context.get("webhook")));
+						return true;
+					} catch (Exception e) {
+						return false;
+					}
+				}));
+		registerQueryEndpoint(QueryEndpointHandler.create("Error while updating settings", "./chatadminsettings",
+				context -> context.get("action").equals("updateAdminSettings"), context -> {
+					try {
+						database.setAdminSettings(new AdminSettings(context.get("adminchannel")));
 						return true;
 					} catch (Exception e) {
 						return false;
@@ -77,7 +92,8 @@ public class WWWIndex implements HttpHandler {
 
 		String target = t.getRequestURI().toString();
 		String response = "";
-		String bodyText = "Discord!";
+		String bodyText = "Discord!<br>";
+		bodyText += "<form method=\"get\" action=\"/quit\"><input type='hidden' name='action' value='quit'><input type='submit' value='Quit Bot'></form>";
 
 		InputStream is = new ByteArrayInputStream(WebPageContentsSingleton.getWebpageContents().getBytes());
 		try (BufferedReader br = new BufferedReader(new InputStreamReader(is))) {

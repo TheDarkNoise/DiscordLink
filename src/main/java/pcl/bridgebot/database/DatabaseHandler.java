@@ -143,6 +143,22 @@ public class DatabaseHandler {
         return new CustomSettings(formatterMode, defaultWebhookName);
     }
 
+    public AdminSettings getAdminSettings() {
+        String defaultAdminChannel = "000000000000";
+        try {
+            PreparedStatement getSettings = Database.getPreparedStatement("getSettings");
+
+            getSettings.setString(1, "defaultAdminChannel");
+            ResultSet defaultAdminChannelQueryResult = getSettings.executeQuery();
+            if (defaultAdminChannelQueryResult.next())
+                defaultAdminChannel = defaultAdminChannelQueryResult.getString(1);
+
+        } catch (Exception e) {
+            // NO OP, just use default parameters
+        }
+        return new AdminSettings(defaultAdminChannel);
+    }
+
     public void setCustomSettings(CustomSettings settings) throws Exception, SQLException {
         PreparedStatement setSettings = Database.getPreparedStatement("setSettings");
 
@@ -152,6 +168,15 @@ public class DatabaseHandler {
 
         setSettings.setString(1, "defaultWebhookName");
         setSettings.setString(2, settings.getDefaultWebhookName());
+        setSettings.execute();
+    }
+
+
+    public void setAdminSettings(AdminSettings settings) throws Exception, SQLException {
+        PreparedStatement setSettings = Database.getPreparedStatement("setSettings");
+
+        setSettings.setString(1, "defaultAdminChannel");
+        setSettings.setString(2, settings.getDefaultAdminChannel());
         setSettings.execute();
     }
 

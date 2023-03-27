@@ -63,5 +63,7 @@ public class HTTPd {
 		registerContext("/users", new WWWUserList(adapter), "Users");
 		registerContext("/settings", new WWWCustomSettings(databaseHandler), "Settings");
 		registerContext("/sendmsg", new WWWSendMessage(), "SendMessage");
+		registerContext("/chatadminsettings", new WWWChatAdminSettings(databaseHandler), "ChatAdminSettings");
+		registerContext("/quit", new WWWQuit(), "Quit");
 	}
 }

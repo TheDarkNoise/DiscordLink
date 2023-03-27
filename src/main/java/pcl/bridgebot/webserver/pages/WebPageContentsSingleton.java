@@ -17,6 +17,7 @@ public class WebPageContentsSingleton {
             navbar += "<div class=\"innertube\"><h1><a href=\"users\">Users</a></h1></div>";
             navbar += "<div class=\"innertube\"><h1><a href=\"settings\">Settings</a></h1></div>";
             navbar += "<div class=\"innertube\"><h1><a href=\"sendmsg\">SendMessage</a></h1></div>";
+            navbar += "<div class=\"innertube\"><h1><a href=\"chatadminsettings\">Chat Admin Settings</a></h1></div>";
         }
         return navbar;
     }

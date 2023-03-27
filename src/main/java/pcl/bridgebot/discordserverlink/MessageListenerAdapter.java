@@ -8,6 +8,7 @@ import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.User;
 import net.dv8tion.jda.api.events.message.MessageReceivedEvent;
 import net.dv8tion.jda.api.hooks.ListenerAdapter;
+import pcl.bridgebot.database.CustomSettings;
 import pcl.bridgebot.discordserverlink.impl.DiscordMessageData;
 
 public class MessageListenerAdapter extends ListenerAdapter {
@@ -42,6 +43,8 @@ public class MessageListenerAdapter extends ListenerAdapter {
         // This returns a human readable version of the Message. Similar to what you
         // would see in the client.
         String textMessage = discordMessage.getContentDisplay();
+        String rawMessage = discordMessage.getContentRaw();
+        String messageID = discordMessage.getId();
 
         if (!event.isFromType(ChannelType.TEXT)) {
             // Only handle messages sent using a Guild TextChannel
@@ -70,7 +73,7 @@ public class MessageListenerAdapter extends ListenerAdapter {
         // otherwise it will default to their username. (User#getName())
 
         IDiscordMessageData craftedMessageData = new DiscordMessageData(event.getTextChannel().getId(),
-                event.getAuthor().getId(), userName, textMessage);
+                event.getAuthor().getId(), userName, textMessage, rawMessage, messageID, discordMessage);
         discordMessageHandler.accept(craftedMessageData);
     }
 }

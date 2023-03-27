@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.Socket;
+import java.util.Scanner;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
@@ -63,6 +64,26 @@ public class ChatServerLink {
 		if (shouldRun) {
 			throw new ServerAlreadyRunningException();
 		}
+
+		// Start a separate thread to listen for input
+		Thread inputThread = new Thread(() -> {
+			Scanner scanner = new Scanner(System.in);
+			while (true) {
+				//System.out.println("Input char data to the Java Scanner: ");
+				Scanner charScanner = new Scanner(System.in);
+				charScanner.useDelimiter("");
+				while (charScanner.hasNext()) {
+					char name = charScanner.next().charAt(0);
+					if (name == '\n') {
+						return;
+					}
+					if (name == 'q') {
+						System.exit(0);
+					}
+				}
+			}
+		});
+		inputThread.start();
 
 		shouldRun = true;
 		while(shouldRun) {

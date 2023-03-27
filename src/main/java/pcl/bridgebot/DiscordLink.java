@@ -1,12 +1,18 @@
 package pcl.bridgebot;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.sql.SQLException;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 
 import javax.security.auth.login.LoginException;
 
+import net.dv8tion.jda.api.entities.Message;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -170,6 +176,88 @@ public class DiscordLink {
 	}
 
 	private void handleDiscordMessage(IDiscordMessageData discordMessage) {
+
+		String adminChannel = databaseHandler.getAdminSettings().getDefaultAdminChannel();
+
+		if (adminChannel.equals(discordMessage.getDiscordChannelId())) {
+			System.out.println("IT MATCHED!");
+			String rawMessage = discordMessage.getRawMessage();
+			String message = discordMessage.getMessage();
+			String messageID = discordMessage.getMessageId();
+			Message originalMessage = discordMessage.getDiscordMessage();
+			if (message.toLowerCase().startsWith("op ")) {
+				// Extract the name of the character or person from the message
+				String name = message.substring(3);
+				// Remove leading and trailing whitespace from the name
+				name = name.trim();
+				// Check that the name is not empty
+				if (!name.isEmpty()) {
+					// The name is not empty
+					try {
+						// Get the current directory
+						File currentDir = new File(".");
+						// Create a File object for the "logs" subdirectory
+						File logsDir = new File(currentDir, "logs");
+						// If the "logs" subdirectory doesn't exist, create it
+						if (!logsDir.exists()) {
+							logsDir.mkdir();
+						}
+						// Create a new file with the message ID as the filename
+						File file = new File(logsDir, messageID + ".json");
+						// Create a JSON object with the message content as the value of the "message" property
+						JSONObject json = new JSONObject();
+						json.put("message", rawMessage);
+						// Write the JSON object to the file
+						FileWriter writer = new FileWriter(file);
+						writer.write(json.toString(4));
+						writer.close();
+						System.out.println("JSON file written successfully");
+						//originalMessage.reply("Saved");
+					} catch (IOException e) {
+						//originalMessage.reply("Error writing message to file: " + e.getMessage());
+						System.err.println("Error writing message to file: " + e.getMessage());
+					}
+				}
+			} else {
+				List<Message.Attachment> attachments = originalMessage.getAttachments();
+				for (Message.Attachment attachment : attachments) {
+					if (attachment.getFileName().equalsIgnoreCase("message.txt")) {
+						// The name is not empty
+						try {
+							// Get the current directory
+							File currentDir = new File(".");
+							// Create a File object for the "logs" subdirectory
+							File logsDir = new File(currentDir, "logs");
+							// If the "logs" subdirectory doesn't exist, create it
+							if (!logsDir.exists()) {
+								logsDir.mkdir();
+							}
+
+							// Create a new file with the message ID as the filename
+							File file = new File(logsDir, messageID + ".json");
+							// The message contains a file named "message.txt"
+							String url = attachment.getUrl();
+							// Create a JSON object with the URL as the value of the "url" property
+							JSONObject json = new JSONObject();
+							json.put("url", url);
+							// Do something with the JSON object (e.g. write it to a file)
+							System.out.println("Found message.txt file at URL: " + url);
+							System.out.println("JSON: " + json.toString(4));
+							FileWriter writer = new FileWriter(file);
+							writer.write(json.toString(4));
+							writer.close();
+							//originalMessage.reply("Saved");
+							break;
+						} catch (IOException e) {
+							//originalMessage.reply("Error writing message to file: " + e.getMessage());
+							System.err.println("Error writing message to file: " + e.getMessage());
+						}
+					}
+				}
+			}
+		}
+
+
 		Iterable<String> channelList = databaseHandler
 				.getGameChannelListFromDiscord(discordMessage.getDiscordChannelId());
 
