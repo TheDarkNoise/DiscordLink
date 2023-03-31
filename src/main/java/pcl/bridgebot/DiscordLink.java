@@ -28,275 +28,269 @@ import pcl.bridgebot.webserver.HTTPd;
 
 public class DiscordLink {
 
-	//public static final Logger log = LoggerFactory.getLogger(DiscordLink.class);
-	private final ChatServerLink link;
-	private final DiscordServerLink discordServerLink;
-	private final DatabaseHandler databaseHandler;
+    //public static final Logger log = LoggerFactory.getLogger(DiscordLink.class);
+    private final ChatServerLink link;
+    private final DiscordServerLink discordServerLink;
+    private final DatabaseHandler databaseHandler;
 
-	private final String defaultGID;
+    private final String defaultGID;
 
-	/**
-	 * This is the method where the program starts.
-	 * 
-	 * @throws Exception
-	 */
-	public static void main(String[] args) {
+    /**
+     * This is the method where the program starts.
+     *
+     * @throws Exception
+     */
+    public static void main(String[] args) {
 
-		try {
-			new DiscordLink();
-		} catch (LoginException | InterruptedException e) {
-			// If anything goes wrong with the Discord authentification, this is the
-			// exception that
-			// will represent it
-			e.printStackTrace();
-			System.out.println("DiscordLink initialization Failure!");
-			return;
-		} catch (SQLException e) {
-			e.printStackTrace();
-			System.out.println("Database Failure!");
-			return;
-		} catch (ClassNotFoundException e) {
-			System.out.println(e.getMessage());
-			System.out.println("JDBC Failure!");
-			return;
-		}
-	}
+        try {
+            new DiscordLink();
+        } catch (LoginException | InterruptedException e) {
+            // If anything goes wrong with the Discord authentification, this is the
+            // exception that
+            // will represent it
+            e.printStackTrace();
+            System.out.println("DiscordLink initialization Failure!");
+            return;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            System.out.println("Database Failure!");
+            return;
+        } catch (ClassNotFoundException e) {
+            System.out.println(e.getMessage());
+            System.out.println("JDBC Failure!");
+            return;
+        }
+    }
 
-	public DiscordLink() throws LoginException, InterruptedException, SQLException, ClassNotFoundException {
-		// Initialize JDBC
-		Class.forName("org.sqlite.JDBC");
+    public DiscordLink() throws LoginException, InterruptedException, SQLException, ClassNotFoundException {
+        // Initialize JDBC
+        Class.forName("org.sqlite.JDBC");
 
-		// Initialize the database
-		if (!DatabaseHandler.initialize()) {
-			System.out.println("Database Failure!");
-		}
+        // Initialize the database
+        if (!DatabaseHandler.initialize()) {
+            System.out.println("Database Failure!");
+        }
 
-		databaseHandler = new DatabaseHandler();
+        databaseHandler = new DatabaseHandler();
 
-		// Get the settings
-		BaseSettings settings = null;
-		try {
-			Optional<BaseSettings> maybeSettings = databaseHandler.getSettings();
-			if (maybeSettings.isPresent()) {
-				settings = maybeSettings.get();
+        // Get the settings
+        BaseSettings settings = null;
+        try {
+            Optional<BaseSettings> maybeSettings = databaseHandler.getSettings();
+            if (maybeSettings.isPresent()) {
+                settings = maybeSettings.get();
 
-			} else {
-				// If the settings aren't set, request them from the console
-				settings = requestSettingsToUser();
-				databaseHandler.setSettings(settings);
-			}
-		} catch (Exception e1) {
-			e1.printStackTrace();
-			System.out.println("Error while loading or saving settings !");
-		}
-		defaultGID = settings.getDefaultGID();
+            } else {
+                // If the settings aren't set, request them from the console
+                settings = requestSettingsToUser();
+                databaseHandler.setSettings(settings);
+            }
+        } catch (Exception e1) {
+            e1.printStackTrace();
+            System.out.println("Error while loading or saving settings !");
+        }
+        defaultGID = settings.getDefaultGID();
 
-		// Initialize the ChatServer link
-		System.out.println("Initializing ChatServer connection towards " + settings.getChatserverIP() + ":"
-				+ settings.getChatserverport());
-		link = new ChatServerLink(settings.getChatserverIP(), settings.getChatserverport());
+        // Initialize the ChatServer link
+        System.out.println("Initializing ChatServer connection towards " + settings.getChatserverIP() + ":"
+                + settings.getChatserverport());
+        link = new ChatServerLink(settings.getChatserverIP(), settings.getChatserverport());
 
-		// Initialize the DiscordServer link
-		discordServerLink = new DiscordServerLink(settings.getDiscordToken(),
-				() -> databaseHandler.getCustomSettings().getDefaultWebhookName(),
-				() -> databaseHandler.getCustomSettings().getFormatterMode(), packet -> {
-					handleDiscordMessage(packet);
-				});
+        // Initialize the DiscordServer link
+        discordServerLink = new DiscordServerLink(settings.getDiscordToken(),
+                () -> databaseHandler.getCustomSettings().getDefaultWebhookName(),
+                () -> databaseHandler.getCustomSettings().getFormatterMode(), packet -> {
+            handleDiscordMessage(packet);
+        });
 
-		// Initialize the HTTPd server
-		try {
-			HTTPd httpServer = new HTTPd();
-			httpServer.setup(settings.getHttpdPort());
-			httpServer.registerPages(settings.getHttpdSecret(), databaseHandler, discordServerLink);
-			httpServer.start(settings.getHttpdPort());
-		} catch (Exception e1) {
-			e1.printStackTrace();
-		}
+        // Initialize the HTTPd server
+        try {
+            HTTPd httpServer = new HTTPd();
+            httpServer.setup(settings.getHttpdPort());
+            httpServer.registerPages(settings.getHttpdSecret(), databaseHandler, discordServerLink);
+            httpServer.start(settings.getHttpdPort());
+        } catch (Exception e1) {
+            e1.printStackTrace();
+        }
 
-		// Start the listening loop for the ChatServer on another thread
-		Runnable inGameLinkThreadRunner = new Runnable() {
-			@Override
-			public void run() {
-				try {
-					link.startLoop(t -> {
-						handleInGameMessage(t);
-					});
-				} catch (ServerAlreadyRunningException e) {
-					// NO OP, should never happen
-				}
-			}
-		};
-		Thread inGameLinkThread = new Thread(inGameLinkThreadRunner);
-		inGameLinkThread.start();
-	}
+        // Start the listening loop for the ChatServer on another thread
+        Runnable inGameLinkThreadRunner = new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    link.startLoop(t -> {
+                        handleInGameMessage(t);
+                    });
+                } catch (ServerAlreadyRunningException e) {
+                    // NO OP, should never happen
+                }
+            }
+        };
+        Thread inGameLinkThread = new Thread(inGameLinkThreadRunner);
+        inGameLinkThread.start();
+    }
 
-	public static BaseSettings requestSettingsToUser() {
-		// We've got a fresh database, we need to ask some questions.
-		System.out.println("Enter your Discord Bot token: ");
-		Scanner scanner = new Scanner(System.in);
-		String discordToken = scanner.nextLine();
+    public static BaseSettings requestSettingsToUser() {
+        // We've got a fresh database, we need to ask some questions.
+        System.out.println("Enter your Discord Bot token: ");
+        Scanner scanner = new Scanner(System.in);
+        String discordToken = scanner.nextLine();
 
-		System.out.println("Enter the default *ID* for global messages to show in game.");
-		System.out.println("(This will be the 'user_id' column in the 'cohchat' DB: ");
-		String defaultGID = scanner.nextLine();
+        System.out.println("Enter the default *ID* for global messages to show in game.");
+        System.out.println("(This will be the 'user_id' column in the 'cohchat' DB: ");
+        String defaultGID = scanner.nextLine();
 
-		System.out.println("IPAddress for your chatserver (127.0.0.1?): ");
-		String chatserverIP = scanner.nextLine();
+        System.out.println("IPAddress for your chatserver (127.0.0.1?): ");
+        String chatserverIP = scanner.nextLine();
 
-		System.out.println("HTTPd port for external script interfacing: ");
-		int httpdPort = Integer.parseInt(scanner.nextLine());
+        System.out.println("HTTPd port for external script interfacing: ");
+        int httpdPort = Integer.parseInt(scanner.nextLine());
 
-		System.out.println("HTTPd secret, basically the password sent with all get requests: ");
-		String httpdSecret = scanner.nextLine();
+        System.out.println("HTTPd secret, basically the password sent with all get requests: ");
+        String httpdSecret = scanner.nextLine();
 
-		System.out.println(
-				"If you need to modify these settings you can open 'discordlink.sqlite3' in an SQLite editor.");
-		scanner.close();
+        System.out.println(
+                "If you need to modify these settings you can open 'discordlink.sqlite3' in an SQLite editor.");
+        scanner.close();
 
-		return new BaseSettings(chatserverIP, 31415, defaultGID, discordToken, httpdPort, httpdSecret);
-	}
+        return new BaseSettings(chatserverIP, 31415, defaultGID, discordToken, httpdPort, httpdSecret);
+    }
 
-	private void handleInGameMessage(IPackedMessageData inMsg) {
-		try {
+    private void handleInGameMessage(IPackedMessageData inMsg) {
+        try {
 
-			Optional<String> discordUserId = databaseHandler.getDiscordId(inMsg.getUserId());
+            Optional<String> discordUserId = databaseHandler.getDiscordId(inMsg.getUserId());
 
-			for (String discordChannelId : databaseHandler.getDiscordChannelListFromGame(inMsg.getChatroom())) {
+            for (String discordChannelId : databaseHandler.getDiscordChannelListFromGame(inMsg.getChatroom())) {
 
-				try {
-					discordServerLink.sendMessageToChannel(discordUserId, inMsg.getUserNickname(), inMsg.getMessage(),
-							discordChannelId);
-				} catch (Exception e1) {
-					System.out.println(e1);
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+                try {
+                    discordServerLink.sendMessageToChannel(discordUserId, inMsg.getUserNickname(), inMsg.getMessage(),
+                            discordChannelId);
+                } catch (Exception e1) {
+                    System.out.println(e1);
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
 
-	private void handleDiscordMessage(IDiscordMessageData discordMessage) {
+    private void handleDiscordMessage(IDiscordMessageData discordMessage) {
 
-		String adminChannel = databaseHandler.getAdminSettings().getDefaultAdminChannel();
+        String adminChannel = databaseHandler.getAdminSettings().getDefaultAdminChannel();
 
-		if (adminChannel.equals(discordMessage.getDiscordChannelId())) {
-			System.out.println("IT MATCHED!");
-			String rawMessage = discordMessage.getRawMessage();
-			String message = discordMessage.getMessage();
-			String messageID = discordMessage.getMessageId();
-			Message originalMessage = discordMessage.getDiscordMessage();
-			if (message.toLowerCase().startsWith("op ")) {
-				// Extract the name of the character or person from the message
-				String name = message.substring(3);
-				// Remove leading and trailing whitespace from the name
-				name = name.trim();
-				// Check that the name is not empty
-				if (!name.isEmpty()) {
-					// The name is not empty
-					try {
-						// Get the current directory
-						File currentDir = new File(".");
-						// Create a File object for the "logs" subdirectory
-						File logsDir = new File(currentDir, "logs");
-						// If the "logs" subdirectory doesn't exist, create it
-						if (!logsDir.exists()) {
-							logsDir.mkdir();
-						}
-						// Create a new file with the message ID as the filename
-						File file = new File(logsDir, messageID + ".json");
-						// Create a JSON object with the message content as the value of the "message" property
-						JSONObject json = new JSONObject();
-						json.put("message", rawMessage);
-						// Write the JSON object to the file
-						FileWriter writer = new FileWriter(file);
-						writer.write(json.toString(4));
-						writer.close();
-						System.out.println("JSON file written successfully");
-						//originalMessage.reply("Saved");
-					} catch (IOException e) {
-						//originalMessage.reply("Error writing message to file: " + e.getMessage());
-						System.err.println("Error writing message to file: " + e.getMessage());
-					}
-				}
-			} else {
-				List<Message.Attachment> attachments = originalMessage.getAttachments();
-				for (Message.Attachment attachment : attachments) {
-					if (attachment.getFileName().equalsIgnoreCase("message.txt")) {
-						// The name is not empty
-						try {
-							// Get the current directory
-							File currentDir = new File(".");
-							// Create a File object for the "logs" subdirectory
-							File logsDir = new File(currentDir, "logs");
-							// If the "logs" subdirectory doesn't exist, create it
-							if (!logsDir.exists()) {
-								logsDir.mkdir();
-							}
+        if (adminChannel.equals(discordMessage.getDiscordChannelId())) {
+            System.out.println("IT MATCHED!");
+            String rawMessage = discordMessage.getRawMessage();
+            String message = discordMessage.getMessage();
+            String messageID = discordMessage.getMessageId();
+            Message originalMessage = discordMessage.getDiscordMessage();
+            boolean stopProcessing = false;
 
-							// Create a new file with the message ID as the filename
-							File file = new File(logsDir, messageID + ".json");
-							// The message contains a file named "message.txt"
-							String url = attachment.getUrl();
-							// Create a JSON object with the URL as the value of the "url" property
-							JSONObject json = new JSONObject();
-							json.put("url", url);
-							// Do something with the JSON object (e.g. write it to a file)
-							System.out.println("Found message.txt file at URL: " + url);
-							System.out.println("JSON: " + json.toString(4));
-							FileWriter writer = new FileWriter(file);
-							writer.write(json.toString(4));
-							writer.close();
-							//originalMessage.reply("Saved");
-							break;
-						} catch (IOException e) {
-							//originalMessage.reply("Error writing message to file: " + e.getMessage());
-							System.err.println("Error writing message to file: " + e.getMessage());
-						}
-					}
-				}
-			}
-		}
+            List<Message.Attachment> attachments = originalMessage.getAttachments();
+            for (Message.Attachment attachment : attachments) {
+                // The name is not empty
+                try {
+                    // Get the current directory
+                    File currentDir = new File(".");
+                    // Create a File object for the "logs" subdirectory
+                    File logsDir = new File(currentDir, "logs");
+                    // If the "logs" subdirectory doesn't exist, create it
+                    if (!logsDir.exists()) {
+                        logsDir.mkdir();
+                    }
+
+                    // Create a new file with the message ID as the filename
+                    File file = new File(logsDir, messageID + ".json");
+                    // The message contains a file named "message.txt"
+                    String url = attachment.getUrl();
+                    // Create a JSON object with the URL as the value of the "url" property
+                    JSONObject json = new JSONObject();
+                    json.put("url", url);
+                    // Do something with the JSON object (e.g. write it to a file)
+                    System.out.println("Found message.txt file at URL: " + url);
+                    System.out.println("JSON: " + json.toString(4));
+                    FileWriter writer = new FileWriter(file);
+                    writer.write(json.toString(4));
+                    writer.close();
+                    //originalMessage.reply("Saved");
+                    stopProcessing = true;
+                    break;
+                } catch (IOException e) {
+                    //originalMessage.reply("Error writing message to file: " + e.getMessage());
+                    System.err.println("Error writing message to file: " + e.getMessage());
+                }
+            }
+
+            if (!stopProcessing) {
+                try {
+                    // Get the current directory
+                    File currentDir = new File(".");
+                    // Create a File object for the "logs" subdirectory
+                    File logsDir = new File(currentDir, "logs");
+                    // If the "logs" subdirectory doesn't exist, create it
+                    if (!logsDir.exists()) {
+                        logsDir.mkdir();
+                    }
+                    // Create a new file with the message ID as the filename
+                    File file = new File(logsDir, messageID + ".json");
+                    // Create a JSON object with the message content as the value of the "message" property
+                    JSONObject json = new JSONObject();
+                    json.put("message", rawMessage);
+                    // Write the JSON object to the file
+                    FileWriter writer = new FileWriter(file);
+                    writer.write(json.toString(4));
+                    writer.close();
+                    System.out.println("JSON file written successfully");
+                    stopProcessing = true;
+                    //originalMessage.reply("Saved");
+                } catch (IOException e) {
+                    //originalMessage.reply("Error writing message to file: " + e.getMessage());
+                    System.err.println("Error writing message to file: " + e.getMessage());
+                }
+            }
+        }
 
 
-		Iterable<String> channelList = databaseHandler
-				.getGameChannelListFromDiscord(discordMessage.getDiscordChannelId());
+        Iterable<String> channelList = databaseHandler
+                .getGameChannelListFromDiscord(discordMessage.getDiscordChannelId());
 
-		Optional<Integer> maybeCharacterId = databaseHandler.getCharacterId(discordMessage.getUserId());
+        Optional<Integer> maybeCharacterId = databaseHandler.getCharacterId(discordMessage.getUserId());
 
-		boolean isCharacterLinked = maybeCharacterId.isPresent();
+        boolean isCharacterLinked = maybeCharacterId.isPresent();
 
-		// Prepare the message for the Game server
-		String inGameMsg = discordMessage.getMessage();
-		inGameMsg = EmojiUtils.shortCodify(inGameMsg);
+        // Prepare the message for the Game server
+        String inGameMsg = discordMessage.getMessage();
+        inGameMsg = EmojiUtils.shortCodify(inGameMsg);
 
-		// Get the character ID to send towards. If needed, prepend the Discord username
-		// to the message.
-		Integer characterId = maybeCharacterId.orElse(Integer.valueOf(defaultGID));
-		if (!isCharacterLinked) {
-			inGameMsg = discordMessage.getUserName() + ": " + inGameMsg;
-		}
+        // Get the character ID to send towards. If needed, prepend the Discord username
+        // to the message.
+        Integer characterId = maybeCharacterId.orElse(Integer.valueOf(defaultGID));
+        if (!isCharacterLinked) {
+            inGameMsg = discordMessage.getUserName() + ": " + inGameMsg;
+        }
 
-		// This will store the channels to echo towards. Use a HashSet to prevent
-		// echoing several times to the same channel.
-		HashSet<String> discordChannelsToEchoTo = new HashSet<>();
+        // This will store the channels to echo towards. Use a HashSet to prevent
+        // echoing several times to the same channel.
+        HashSet<String> discordChannelsToEchoTo = new HashSet<>();
 
-		// Send the messages to all linked in-game channels.
-		for (String channelId : channelList) {
+        // Send the messages to all linked in-game channels.
+        for (String channelId : channelList) {
 
-			// Send the message to the in-game channel
-			link.sendMessage(channelId, characterId, "DiscordLink", inGameMsg);
+            // Send the message to the in-game channel
+            link.sendMessage(channelId, characterId, "DiscordLink", inGameMsg);
 
-			// Retrieve the ID of other Discord channels to echo towards
-			discordChannelsToEchoTo.addAll(databaseHandler.getDiscordChannelListFromGame(channelId));
-		}
+            // Retrieve the ID of other Discord channels to echo towards
+            discordChannelsToEchoTo.addAll(databaseHandler.getDiscordChannelListFromGame(channelId));
+        }
 
-		// Echo the message to the other Discord channels
-		for (String echoDiscordChannel : discordChannelsToEchoTo) {
-			// Do not send the message to the current channel.
-			if (discordMessage.getDiscordChannelId().equals(echoDiscordChannel))
-				continue;
-			discordServerLink.sendMessageToChannel(Optional.of(discordMessage.getUserId()),
-					discordMessage.getUserName(), discordMessage.getMessage(), echoDiscordChannel);
-		}
-	}
+        // Echo the message to the other Discord channels
+        for (String echoDiscordChannel : discordChannelsToEchoTo) {
+            // Do not send the message to the current channel.
+            if (discordMessage.getDiscordChannelId().equals(echoDiscordChannel))
+                continue;
+            discordServerLink.sendMessageToChannel(Optional.of(discordMessage.getUserId()),
+                    discordMessage.getUserName(), discordMessage.getMessage(), echoDiscordChannel);
+        }
+    }
 }
